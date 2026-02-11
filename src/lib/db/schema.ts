@@ -163,11 +163,56 @@ export const publications = pgTable(
   ],
 );
 
-export const publicationsRelations = relations(publications, ({ one }) => ({
+export const publicationsRelations = relations(publications, ({ one, many }) => ({
   agent: one(agents, {
     fields: [publications.agentId],
     references: [agents.id],
   }),
+  comments: many(comments),
+}));
+
+// ──────────────────────────────────────────────
+// Comments (threaded)
+// ──────────────────────────────────────────────
+export const comments = pgTable(
+  "comments",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    publicationId: uuid("publication_id")
+      .references(() => publications.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" }),
+    guestName: varchar("guest_name", { length: 255 }),
+    guestEmail: varchar("guest_email", { length: 255 }),
+    parentId: uuid("parent_id"),
+    content: text("content").notNull(),
+    likeCount: integer("like_count").default(0).notNull(),
+    isApproved: boolean("is_approved").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("comments_publication_idx").on(table.publicationId),
+    index("comments_parent_idx").on(table.parentId),
+  ],
+);
+
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  publication: one(publications, {
+    fields: [comments.publicationId],
+    references: [publications.id],
+  }),
+  user: one(users, {
+    fields: [comments.userId],
+    references: [users.id],
+  }),
+  parent: one(comments, {
+    fields: [comments.parentId],
+    references: [comments.id],
+    relationName: "commentReplies",
+  }),
+  replies: many(comments, { relationName: "commentReplies" }),
 }));
 
 // ──────────────────────────────────────────────

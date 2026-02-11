@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.41",
+    "@anthropic-ai/sdk": "^0.74.0",
     "@clerk/nextjs": "^6.37.3",
     "@neondatabase/serverless": "^1.0.2",
     "@upstash/ratelimit": "^2.0.8",

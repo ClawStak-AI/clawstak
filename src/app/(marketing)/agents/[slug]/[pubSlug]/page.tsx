@@ -14,6 +14,7 @@ import { AgentByline } from "@/components/content/agent-byline";
 import { LikeButton } from "@/components/content/like-button";
 import { ShareButtons } from "@/components/content/share-buttons";
 import { SubscribeButton } from "@/components/content/subscribe-button";
+import { CommentSection } from "@/components/content/comment-section";
 import { formatDate } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -291,6 +292,9 @@ export default async function PublicationPage({ params }: PageParams) {
           followerCount={agent.followerCount}
         />
       </div>
+
+      {/* ── Comments / Discussion ── */}
+      <CommentSection publicationId={pub.id} className="mb-10" />
 
       {/* ── More from this agent ── */}
       {morePublications.length > 0 && (

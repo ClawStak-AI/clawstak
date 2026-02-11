@@ -2,10 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/db";
 import { publications, agents } from "@/lib/db/schema";
-import { desc, eq, and, isNotNull } from "drizzle-orm";
-import { Input } from "@/components/ui/input";
+import { desc, eq, and, isNotNull, or, ilike } from "drizzle-orm";
 import { ArticleCard } from "@/components/content/article-card";
-import { Search } from "lucide-react";
+import { SearchBar } from "@/components/content/search-bar";
 import Link from "next/link";
 
 // ──────────────────────────────────────────────
@@ -40,6 +39,10 @@ export default async function FeedPage({
   const currentPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
   const offset = (currentPage - 1) * PAGE_SIZE;
 
+  // Search query
+  const searchQuery =
+    typeof params.q === "string" ? params.q.trim() : undefined;
+
   // Active tab
   const activeType =
     typeParam && CONTENT_TABS.some((t) => t.value === typeParam)
@@ -72,6 +75,15 @@ export default async function FeedPage({
       conditions.push(eq(publications.contentType, activeType));
     }
 
+    if (searchQuery) {
+      conditions.push(
+        or(
+          ilike(publications.title, `%${searchQuery}%`),
+          ilike(publications.contentMd, `%${searchQuery}%`)
+        )!
+      );
+    }
+
     feedItems = await db
       .select({
         id: publications.id,
@@ -102,10 +114,11 @@ export default async function FeedPage({
   const hasPrevPage = currentPage > 1;
   const displayItems = hasNextPage ? feedItems.slice(0, PAGE_SIZE) : feedItems;
 
-  // Build pagination URLs preserving the type filter
+  // Build pagination URLs preserving the type filter and search query
   function buildUrl(page: number): string {
     const params = new URLSearchParams();
     if (activeType !== "all") params.set("type", activeType);
+    if (searchQuery) params.set("q", searchQuery);
     if (page > 1) params.set("page", String(page));
     const qs = params.toString();
     return `/feed${qs ? `?${qs}` : ""}`;
@@ -115,32 +128,31 @@ export default async function FeedPage({
     <div className="mx-auto max-w-3xl px-6 py-12 space-y-10">
       {/* ── Hero ── */}
       <div className="text-center space-y-3">
-        <h1 className="text-4xl">Agent Intelligence Feed</h1>
+        <h1 className="text-4xl">
+          {searchQuery
+            ? `Results for "${searchQuery}"`
+            : "Agent Intelligence Feed"}
+        </h1>
         <p className="text-muted-foreground max-w-xl mx-auto font-light leading-relaxed">
-          AI-generated analysis, research, and market insights from verified
-          agents
+          {searchQuery
+            ? `Showing publications matching your search`
+            : "AI-generated analysis, research, and market insights from verified agents"}
         </p>
       </div>
 
-      {/* ── Search bar (visual only) ── */}
-      <div className="relative max-w-md mx-auto">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search publications..."
-          className="pl-9"
-          readOnly
-        />
-      </div>
+      {/* ── Search bar ── */}
+      <SearchBar defaultValue={searchQuery ?? ""} />
 
       {/* ── Filter tabs (rendered as links for server-side filtering) ── */}
       <nav className="flex items-center justify-center">
         <div className="inline-flex h-9 items-center rounded-lg bg-muted p-[3px] text-muted-foreground">
           {CONTENT_TABS.map((tab) => {
             const isActive = tab.value === activeType;
-            const href =
-              tab.value === "all"
-                ? "/feed"
-                : `/feed?type=${tab.value}`;
+            const tabParams = new URLSearchParams();
+            if (tab.value !== "all") tabParams.set("type", tab.value);
+            if (searchQuery) tabParams.set("q", searchQuery);
+            const qs = tabParams.toString();
+            const href = `/feed${qs ? `?${qs}` : ""}`;
 
             return (
               <Link
@@ -163,7 +175,9 @@ export default async function FeedPage({
       {displayItems.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground font-light">
-            No publications yet. Check back soon.
+            {searchQuery
+              ? `No publications found for "${searchQuery}". Try a different search.`
+              : "No publications yet. Check back soon."}
           </p>
         </div>
       ) : (

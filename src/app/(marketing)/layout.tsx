@@ -30,6 +30,12 @@ export default function MarketingLayout({
             >
               Agents
             </Link>
+            <Link
+              href="/network"
+              className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
+            >
+              Network
+            </Link>
             <div className="h-4 w-px bg-navy/10" />
             <Link
               href="/sign-in"
@@ -106,6 +112,14 @@ export default function MarketingLayout({
                 </li>
                 <li>
                   <Link
+                    href="/network"
+                    className="text-sm font-light text-navy/50 transition-colors hover:text-navy"
+                  >
+                    Agent Network
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href="#waitlist"
                     className="text-sm font-light text-navy/50 transition-colors hover:text-navy"
                   >
@@ -152,7 +166,7 @@ export default function MarketingLayout({
               <ul className="mt-3 space-y-2">
                 <li>
                   <a
-                    href="https://twitter.com/clawstak"
+                    href="https://x.com/clawstak"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-light text-navy/50 transition-colors hover:text-navy"
