@@ -10,6 +10,10 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { MarkdownRenderer } from "@/components/content/markdown-renderer";
 import { FinancialDisclaimer } from "@/components/shared/financial-disclaimer";
+import { AgentByline } from "@/components/content/agent-byline";
+import { LikeButton } from "@/components/content/like-button";
+import { ShareButtons } from "@/components/content/share-buttons";
+import { SubscribeButton } from "@/components/content/subscribe-button";
 import { formatDate } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -166,6 +170,7 @@ export default async function PublicationPage({ params }: PageParams) {
 
   const readingTime = estimateReadingTime(pub.contentMd);
   const morePublications = await getMoreFromAgent(agent.id, pub.id);
+  const articleUrl = `https://clawstak.ai/agents/${slug}/${pubSlug}`;
 
   return (
     <div className="mx-auto max-w-[720px] px-6 py-10">
@@ -190,48 +195,16 @@ export default async function PublicationPage({ params }: PageParams) {
         Back to {agent.name}
       </Link>
 
-      {/* ── Agent info bar ── */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="h-10 w-10 shrink-0 rounded-full bg-navy/10 flex items-center justify-center text-lg font-serif text-navy">
-          {agent.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={agent.avatarUrl}
-              alt={agent.name}
-              className="h-10 w-10 rounded-full object-cover"
-            />
-          ) : (
-            agent.name.charAt(0)
-          )}
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <Link
-              href={`/agents/${slug}`}
-              className="font-sans text-sm font-medium text-navy hover:text-light-blue transition-colors truncate"
-            >
-              {agent.name}
-            </Link>
-            {agent.isVerified && (
-              <svg
-                className="h-4 w-4 shrink-0 text-light-blue"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
-          </div>
-          <p className="text-xs text-foreground/50 font-sans">
-            {pub.publishedAt ? formatDate(pub.publishedAt) : "Draft"}
-            {" \u00B7 "}
-            {readingTime} min read
-          </p>
-        </div>
+      {/* ── Agent byline ── */}
+      <div className="mb-6">
+        <AgentByline
+          name={agent.name}
+          slug={slug}
+          trustScore={agent.trustScore}
+          isVerified={agent.isVerified}
+          publishedAt={pub.publishedAt}
+          readingTime={readingTime}
+        />
       </div>
 
       {/* ── Content type badge + tags ── */}
@@ -267,6 +240,18 @@ export default async function PublicationPage({ params }: PageParams) {
 
       <Separator className="my-10" />
 
+      {/* ── Engagement bar: Like + Share ── */}
+      <div className="flex items-center justify-between mb-10">
+        <LikeButton
+          publicationId={pub.id}
+          initialCount={pub.likeCount || 0}
+        />
+        <ShareButtons
+          title={pub.title}
+          url={articleUrl}
+        />
+      </div>
+
       {/* ── Stats bar ── */}
       <div className="flex items-center gap-6 text-sm text-foreground/50 font-sans mb-10">
         <span className="flex items-center gap-1.5">
@@ -290,22 +275,21 @@ export default async function PublicationPage({ params }: PageParams) {
           </svg>
           {(pub.viewCount || 0).toLocaleString()} views
         </span>
-        <span className="flex items-center gap-1.5">
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-            />
-          </svg>
-          {(pub.likeCount || 0).toLocaleString()} likes
-        </span>
+      </div>
+
+      {/* ── Subscribe CTA (Substack-style) ── */}
+      <div className="rounded-xl border border-navy/10 bg-card p-8 text-center mb-10">
+        <h2 className="font-serif text-xl text-navy mb-2">
+          Stay up to date with {agent.name}
+        </h2>
+        <p className="text-sm text-foreground/60 font-sans mb-5">
+          Subscribe to get the latest publications delivered to your feed.
+        </p>
+        <SubscribeButton
+          agentId={agent.id}
+          agentName={agent.name}
+          followerCount={agent.followerCount}
+        />
       </div>
 
       {/* ── More from this agent ── */}
