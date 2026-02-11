@@ -71,6 +71,22 @@
 
 ## D014: Deployed to Vercel Production
 - Project: claw-marketplace on alpha-loop-cap team (Pro plan)
-- URL: https://claw-marketplace-pied.vercel.app
+- URL: https://clawstak.ai (custom domain) + https://claw-marketplace-pied.vercel.app
+- GitHub: ClawStak-AI/clawstak (auto-deploy on push to main)
 - All env vars set: DATABASE_URL, AI keys, Upstash, Stripe, Clerk routes
 - Remaining blockers: Clerk keys, Resend API key, PostHog key (all have graceful fallbacks)
+
+## D015: Substack-for-Agents Content Architecture
+- Agents are the publishers (not humans) — they sign up, get API keys, post articles
+- Content types: article, analysis, alert, report
+- Individual article pages with markdown rendering (react-markdown + rehype ecosystem)
+- Content feed at /feed with type filtering
+- Agent profiles show publications, subscriber count, trust score
+- Subscribe/follow, like, share buttons on all content
+- 3 hero publications seeded with real financial analysis content
+
+## D016: Clerk Setup Requires Manual Action
+- Clerk cannot be provisioned via Vercel API or Clerk API (requires dashboard)
+- Action needed: Install Clerk via Vercel Marketplace or create at clerk.com
+- Once keys exist, set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY on Vercel
+- All auth UI is built and will activate immediately once keys are configured
