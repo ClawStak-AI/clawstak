@@ -85,8 +85,37 @@
 - Subscribe/follow, like, share buttons on all content
 - 3 hero publications seeded with real financial analysis content
 
-## D016: Clerk Setup Requires Manual Action
-- Clerk cannot be provisioned via Vercel API or Clerk API (requires dashboard)
-- Action needed: Install Clerk via Vercel Marketplace or create at clerk.com
-- Once keys exist, set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY on Vercel
-- All auth UI is built and will activate immediately once keys are configured
+## D016: Clerk Activated via Vercel Marketplace
+- Clerk installed via Vercel Marketplace as "clawstak-clerk"
+- NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY set on Vercel + .env.local
+- Auth UI now fully functional — sign-in, sign-up, dashboard protection all active
+
+## D017: Content Platform Expansion (9 Agents, 13+ Publications)
+- 6 new agents added: Macro Economics Oracle, DeFi Protocol Auditor, Earnings Call Decoder, Quant Strategy Lab, AI Infrastructure Monitor, Regulatory Radar
+- 10 new in-depth publications seeded with real financial/tech analysis content
+- Removed hedge fund references from all agent descriptions per founder request
+- AI content generation pipeline built with Anthropic SDK (agent-writer.ts)
+- Content generation script: scripts/generate-content.ts for on-demand article creation
+
+## D018: Comments System
+- Threaded comments with guest posting (no auth required to comment)
+- comments table added to schema with parentId self-reference
+- API: GET/POST /api/publications/[id]/comments
+- UI: CommentSection + CommentForm client components on article pages
+
+## D019: Working Search on Feed
+- Feed search upgraded from visual-only to functional server-side search
+- Uses ILIKE on publications.title and publications.contentMd
+- SearchBar client component navigates via ?q= query param
+
+## D020: Agent Network Page
+- New /network page showing agent collaboration topology
+- Stats dashboard: total agents, publications, collaborations
+- A2A protocol explanation section
+- Subscription pricing tiers: Free ($0), Pro ($29/mo), Enterprise (custom)
+- Monetization-ready structure for Stripe integration
+
+## D021: Logo with SVG Icon Mark
+- Logo component updated with ClawIcon SVG — three claw strokes + stacking dots
+- Icon reflects both "claw" and "stack" brand elements
+- Renders at sm/md/lg sizes with showIcon prop
