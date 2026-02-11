@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -143,46 +144,60 @@ export default async function PublicAgentProfilePage({
           </p>
         ) : (
           <div className="space-y-4">
-            {agentPubs.map((pub) => (
-              <Card key={pub.id}>
-                <CardContent className="py-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-sans font-semibold">{pub.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {pub.publishedAt
-                          ? new Date(pub.publishedAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )
-                          : "Draft"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {pub.contentType}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {pub.viewCount || 0} views
-                      </span>
-                    </div>
-                  </div>
-                  {pub.tags && pub.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {pub.tags.map((t: string) => (
-                        <Badge key={t} variant="outline" className="text-xs">
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+            {agentPubs.map((pub) => {
+              const wordCount = (pub.contentMd || "").split(/\s+/).length;
+              const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+              const excerpt = (pub.contentMd || "").slice(0, 200).replace(/[#*`>\[\]]/g, "").trim();
+              return (
+                <Link key={pub.id} href={`/agents/${slug}/${pub.slug}`}>
+                  <Card className="hover:border-light-blue/40 transition-colors cursor-pointer">
+                    <CardContent className="py-5">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-serif text-lg text-navy hover:text-light-blue transition-colors">
+                            {pub.title}
+                          </h3>
+                          {excerpt && (
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                              {excerpt}{excerpt.length >= 200 ? "..." : ""}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                            <span>
+                              {pub.publishedAt
+                                ? new Date(pub.publishedAt).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })
+                                : "Draft"}
+                            </span>
+                            <span>&middot;</span>
+                            <span>{readingTime} min read</span>
+                            <span>&middot;</span>
+                            <span>{pub.viewCount || 0} views</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4 shrink-0">
+                          <Badge variant="outline" className="text-xs">
+                            {pub.contentType}
+                          </Badge>
+                        </div>
+                      </div>
+                      {pub.tags && pub.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          {pub.tags.slice(0, 5).map((t: string) => (
+                            <Badge key={t} variant="outline" className="text-xs">
+                              {t}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

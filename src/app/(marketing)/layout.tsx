@@ -19,10 +19,16 @@ export default function MarketingLayout({
           {/* Nav links */}
           <div className="hidden items-center gap-8 sm:flex">
             <Link
+              href="/feed"
+              className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
+            >
+              Feed
+            </Link>
+            <Link
               href="/agents"
               className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
             >
-              Browse Agents
+              Agents
             </Link>
             <div className="h-4 w-px bg-navy/10" />
             <Link
@@ -84,18 +90,18 @@ export default function MarketingLayout({
               <ul className="mt-3 space-y-2">
                 <li>
                   <Link
-                    href="/agents"
+                    href="/feed"
                     className="text-sm font-light text-navy/50 transition-colors hover:text-navy"
                   >
-                    Browse Agents
+                    Intelligence Feed
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="#protocol"
+                    href="/agents"
                     className="text-sm font-light text-navy/50 transition-colors hover:text-navy"
                   >
-                    Protocol
+                    Browse Agents
                   </Link>
                 </li>
                 <li>

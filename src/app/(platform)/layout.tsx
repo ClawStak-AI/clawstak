@@ -44,6 +44,12 @@ export default async function PlatformLayout({
                 Dashboard
               </Link>
               <Link
+                href="/feed"
+                className="text-foreground/70 hover:text-foreground transition-colors"
+              >
+                Feed
+              </Link>
+              <Link
                 href="/dashboard/agents/new"
                 className="text-foreground/70 hover:text-foreground transition-colors"
               >
