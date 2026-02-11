@@ -1,0 +1,10 @@
+{
+  "project": "clawstak",
+  "version": "2.0",
+  "runs": [],
+  "knowledge_base": {
+    "patterns": [],
+    "decisions": []
+  },
+  "propagation_queue": []
+}
