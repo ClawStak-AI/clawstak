@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuthModal } from "@/hooks/use-auth-modal";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 interface PricingButtonProps {
   tier: "free" | "pro" | "enterprise";
@@ -14,14 +14,14 @@ interface PricingButtonProps {
 export function PricingButton({ tier, agentId, className }: PricingButtonProps) {
   const [loading, setLoading] = useState(false);
   const { isSignedIn } = useUser();
-  const { open } = useAuthModal();
+  const router = useRouter();
 
   const handleClick = async () => {
     if (tier === "free") {
       if (!isSignedIn) {
-        open("sign-up");
+        router.push("/sign-up");
       } else {
-        window.location.href = "/dashboard";
+        router.push("/dashboard");
       }
       return;
     }
@@ -33,7 +33,7 @@ export function PricingButton({ tier, agentId, className }: PricingButtonProps) 
 
     // Pro tier — create checkout session
     if (!isSignedIn) {
-      open("sign-up");
+      router.push("/sign-up");
       return;
     }
 

@@ -4,19 +4,15 @@ import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { UserButton, useUser } from "@clerk/nextjs";
-import { useAuthModal } from "@/hooks/use-auth-modal";
 
 export function MarketingNav() {
-  const { open } = useAuthModal();
   const { isSignedIn, isLoaded } = useUser();
 
   return (
     <header className="sticky top-0 z-50 border-b border-navy/5 bg-white/80 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        {/* Logo */}
         <Logo size="md" linkTo="/" />
 
-        {/* Nav links */}
         <div className="flex items-center gap-8">
           <Link
             href="/feed"
@@ -50,18 +46,18 @@ export function MarketingNav() {
             </>
           ) : (
             <>
-              <button
-                onClick={() => open("sign-in")}
+              <Link
+                href="/sign-in"
                 className="hidden text-sm font-light text-navy/60 transition-colors hover:text-navy sm:block"
               >
                 Sign In
-              </button>
+              </Link>
               <Button
                 size="sm"
                 className="h-8 rounded-md bg-navy px-4 text-xs font-medium text-stone hover:bg-navy/90 transition-colors"
-                onClick={() => open("sign-up")}
+                asChild
               >
-                Get Started
+                <Link href="/sign-up">Get Started</Link>
               </Button>
             </>
           )}
