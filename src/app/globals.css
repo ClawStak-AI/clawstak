@@ -233,6 +233,12 @@
     scroll-behavior: smooth;
   }
 
+  /* Step connector dashed line for "How It Works" section */
+  .step-connector {
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+
   /* Focus-visible ring for accessibility */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
