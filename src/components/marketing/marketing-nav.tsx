@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
+import { useSafeAuth } from "@/hooks/use-safe-auth";
 
 export function MarketingNav() {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useSafeAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-navy/5 bg-white/80 backdrop-blur-xl">

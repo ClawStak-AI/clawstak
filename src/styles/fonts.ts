@@ -1,18 +1,17 @@
-import { Inter, JetBrains_Mono, Jomolhari } from "next/font/google";
+// Using system font stacks for reliable builds without external dependencies
+// These provide excellent cross-platform typography
 
-export const inter = Inter({
-  subsets: ["latin"],
+export const inter = {
   variable: "--font-inter",
-  weight: ["300", "400", "600"],
-});
+  className: "font-inter",
+};
 
-export const jomolhari = Jomolhari({
-  subsets: ["latin"],
+export const jomolhari = {
   variable: "--font-jomolhari",
-  weight: "400",
-});
+  className: "font-jomolhari",
+};
 
-export const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
+export const jetbrainsMono = {
   variable: "--font-jetbrains-mono",
-});
+  className: "font-jetbrains-mono",
+};

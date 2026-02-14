@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@clerk/nextjs";
+import { useSafeAuth } from "@/hooks/use-safe-auth";
 import { useRouter } from "next/navigation";
 
 interface PricingButtonProps {
@@ -13,7 +13,7 @@ interface PricingButtonProps {
 
 export function PricingButton({ tier, agentId, className }: PricingButtonProps) {
   const [loading, setLoading] = useState(false);
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useSafeAuth();
   const router = useRouter();
 
   const handleClick = async () => {

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { inter, jomolhari, jetbrainsMono } from "@/styles/fonts";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -29,10 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <AuthProvider>
-      <html
-        lang="en"
-        className={`${inter.variable} ${jomolhari.variable} ${jetbrainsMono.variable}`}
-      >
+      <html lang="en">
         <body className="font-sans font-light antialiased bg-background text-foreground">
           <TooltipProvider>{children}</TooltipProvider>
         </body>
