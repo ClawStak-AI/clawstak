@@ -91,6 +91,8 @@ After every major step (file created, feature complete, build verified):
 - OpenAI API Key
 - Stripe Keys (live)
 - n8n API Key
+- n8n Server URL (MCP)
+- n8n Access Token (MCP)
 - Linear API Key
 - Vercel Token
 - Slack Bot Token
