@@ -119,3 +119,11 @@
 - Logo component updated with ClawIcon SVG — three claw strokes + stacking dots
 - Icon reflects both "claw" and "stack" brand elements
 - Renders at sm/md/lg sizes with showIcon prop
+
+## D022: Slack Channel as Central Logging Hub
+- Slack #clawstak-dev channel designated as central logging hub
+- All project tasks, status updates, suggestions logged there
+- Everything syncs to Notion.AI ClawStak workspace via n8n automation
+- A2A (Agent-to-Agent) conversations happen in-channel
+- PROJECT-LOG.md created as append-only local changelog
+- n8n workflows to be created: Slack Message Logger, Task Tracker, Blocker Alert, Completion Logger, A2A Conversation Tracker

@@ -4,13 +4,14 @@
 If your context gets compacted, READ THIS FILE FIRST to know exactly where you are.
 
 ## Current Status
-- **Active Batch**: Post-Batch 1 — Content Platform + Agent Network
-- **Last Completed Step**: 9 agents seeded, 13 publications live, comments system, search, network page, logo, AI writer pipeline, deployed to Vercel
-- **Next Step**: Debug /network 404 + /sign-in 500 on production, check n8n Docker, build marketing agents, wire Stripe payments
+- **Active Batch**: Post-Batch 1 — Content Platform + Agent Network + Slack Logging
+- **Last Completed Step**: Slack channel logging infrastructure set up (D022), 5 n8n workflows for Slack → Notion sync, PROJECT-LOG.md created
+- **Next Step**: Deploy n8n workflows, set up Notion databases, configure Slack Event Subscriptions
 - **Blocking Issues**:
   - Anthropic API key returns 401 (expired?) — AI content generation scripts won't work until refreshed
   - /network returns 404 on production despite being in build output
   - /sign-in returns 500 (Clerk SSR issue)
+  - Notion databases need creation for Slack sync workflows
 
 ## Deployment
 - **Live URL**: https://clawstak.ai
@@ -26,10 +27,14 @@ If your context gets compacted, READ THIS FILE FIRST to know exactly where you a
 - **13 Publications**: 3 original + 10 seeded via seed-all-content.ts
 
 ## n8n Automation
-- **Docker Compose**: docker-compose.yml at project root
-- **URL**: localhost:5678
-- **4 Workflows**: Email Triage Bot, Weekly Analytics Digest, Build Pipeline, Global Error Handler
-- **Status**: NEEDS CHECK — verify Docker container is running
+- **n8n Cloud**: clawstak.app.n8n.cloud (migrated from Docker)
+- **20 Workflows**: Including 5 new Slack → Notion sync workflows
+  - User Welcome, Agent Registration, Content Pipeline, Weekly/Daily Analytics
+  - Stripe Processing, Email Triage, Linear Pipeline, Error Handler
+  - Agent Collaboration, Content Recommendations, Milestones, Uptime Monitoring
+  - Agent Profile Enrichment, PostHog Sync
+  - NEW: Slack Message Logger, Task Tracker, Blocker Alert, Completion Logger, A2A Tracker
+- **Status**: Ready to deploy via `npx tsx scripts/setup-n8n.ts`
 
 ## What Exists (verified files)
 
@@ -136,12 +141,14 @@ button, card, input, label, badge, separator, dialog, dropdown-menu, sheet, tabs
 ## TODO for Next Session
 1. Debug /network 404 on production (file exists, builds, but 404 on Vercel)
 2. Debug /sign-in 500 (Clerk SSR issue)
-3. Check n8n Docker is running (`docker compose up -d`)
-4. Get fresh Anthropic API key for AI content generation
-5. Build marketing agents (user requested)
-6. Wire Stripe payment flows to pricing tiers
-7. Agent collaboration features (LinkedIn-for-agents concept)
-8. Monetization infrastructure (subscriptions, premium content)
+3. Deploy n8n workflows via `npx tsx scripts/setup-n8n.ts`
+4. Set up Notion databases for Slack sync (NOTION_PROJECT_LOG_DB, NOTION_TASKS_DB, NOTION_BLOCKERS_DB, NOTION_CHANGELOG_DB, NOTION_A2A_DB)
+5. Configure Slack Event Subscriptions to point to n8n webhooks
+6. Get fresh Anthropic API key for AI content generation
+7. Build marketing agents (user requested)
+8. Wire Stripe payment flows to pricing tiers
+9. Agent collaboration features (LinkedIn-for-agents concept)
+10. Monetization infrastructure (subscriptions, premium content)
 
 ## Decisions Log
 See DECISIONS.md for D001-D021 architectural decisions.

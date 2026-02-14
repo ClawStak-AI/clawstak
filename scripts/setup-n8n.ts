@@ -233,6 +233,75 @@ const workflows = [
     connections: { "Daily Midnight": { main: [[{ node: "Fetch PostHog", type: "main", index: 0 }]] }, "Fetch PostHog": { main: [[{ node: "Aggregate", type: "main", index: 0 }]] }, Aggregate: { main: [[{ node: "Store Metrics", type: "main", index: 0 }]] } },
     settings: { executionOrder: "v1" },
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // SLACK → NOTION SYNC WORKFLOWS (D022)
+  // ═══════════════════════════════════════════════════════════════
+
+  // 16. Slack Message Logger → Notion
+  {
+    name: "16. Slack Message Logger → Notion",
+    nodes: [
+      { parameters: { httpMethod: "POST", path: "slack-message-log", responseMode: "onReceived" }, name: "Slack Event Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [250, 300] },
+      { parameters: { jsCode: `const event = $input.first().json.body?.event || $input.first().json;\nconst text = event.text || '';\nlet type = 'STATUS';\nif (text.includes('TASK:') || text.includes('TODO:')) type = 'TASK';\nelse if (text.includes('BLOCKER:') || text.includes('BLOCKED:')) type = 'BLOCKER';\nelse if (text.includes('COMPLETE:') || text.includes('DONE:')) type = 'COMPLETE';\nelse if (text.includes('DECISION:')) type = 'DECISION';\nelse if (text.includes('IDEA:')) type = 'IDEA';\nelse if (text.includes('A2A:')) type = 'A2A';\nreturn [{json: { type, text, user: event.user, channel: event.channel, ts: event.ts, timestamp: new Date().toISOString() }}];` }, name: "Parse Message Type", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
+      { parameters: { resource: "databasePage", databaseId: "={{ $env.NOTION_PROJECT_LOG_DB }}", title: "={{ $json.type }}: {{ $json.text.substring(0, 100) }}", propertiesUi: { propertyValues: [{ key: "Type", type: "select", selectValue: "={{ $json.type }}" }, { key: "Content", type: "richText", textContent: "={{ $json.text }}" }, { key: "Source", type: "select", selectValue: "Slack" }, { key: "Timestamp", type: "date", date: "={{ $json.timestamp }}" }, { key: "Status", type: "select", selectValue: "={{ $json.type === 'TASK' ? 'Open' : 'Logged' }}" }] } }, name: "Create Notion Entry", type: "n8n-nodes-base.notion", typeVersion: 2.2, position: [750, 300] },
+    ],
+    connections: { "Slack Event Webhook": { main: [[{ node: "Parse Message Type", type: "main", index: 0 }]] }, "Parse Message Type": { main: [[{ node: "Create Notion Entry", type: "main", index: 0 }]] } },
+    settings: { executionOrder: "v1" },
+  },
+
+  // 17. Slack Task Tracker → Notion Tasks
+  {
+    name: "17. Slack Task Tracker → Notion",
+    nodes: [
+      { parameters: { httpMethod: "POST", path: "slack-task-tracker", responseMode: "onReceived" }, name: "Task Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [250, 300] },
+      { parameters: { jsCode: `const event = $input.first().json.body?.event || $input.first().json;\nconst text = event.text || '';\nconst taskMatch = text.match(/(?:TASK:|TODO:)\\s*(.+)/i);\nif (!taskMatch) return [];\nconst taskDescription = taskMatch[1].trim();\nconst priorityMatch = text.match(/P[0-3]|HIGH|MEDIUM|LOW/i);\nconst priority = priorityMatch ? priorityMatch[0].toUpperCase() : 'MEDIUM';\nconst assigneeMatch = text.match(/@(\\w+)/g);\nconst assignees = assigneeMatch ? assigneeMatch.map(a => a.replace('@', '')) : [];\nreturn [{json: { task: taskDescription, priority, assignees: assignees.join(', '), user: event.user, channel: event.channel, ts: event.ts, timestamp: new Date().toISOString() }}];` }, name: "Parse Task", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
+      { parameters: { resource: "databasePage", databaseId: "={{ $env.NOTION_TASKS_DB }}", title: "={{ $json.task }}", propertiesUi: { propertyValues: [{ key: "Status", type: "select", selectValue: "Open" }, { key: "Priority", type: "select", selectValue: "={{ $json.priority }}" }, { key: "Assignees", type: "richText", textContent: "={{ $json.assignees }}" }, { key: "Source", type: "select", selectValue: "Slack" }, { key: "Created", type: "date", date: "={{ $json.timestamp }}" }] } }, name: "Create Notion Task", type: "n8n-nodes-base.notion", typeVersion: 2.2, position: [750, 300] },
+      { parameters: { channel: "={{ $json.channel }}", text: "=Task logged to Notion: {{ $json.task }}" }, name: "Confirm in Slack", type: "n8n-nodes-base.slack", typeVersion: 2.2, position: [1000, 300] },
+    ],
+    connections: { "Task Webhook": { main: [[{ node: "Parse Task", type: "main", index: 0 }]] }, "Parse Task": { main: [[{ node: "Create Notion Task", type: "main", index: 0 }]] }, "Create Notion Task": { main: [[{ node: "Confirm in Slack", type: "main", index: 0 }]] } },
+    settings: { executionOrder: "v1" },
+  },
+
+  // 18. Slack Blocker Alert → Notion + Founder Alert
+  {
+    name: "18. Slack Blocker Alert → Notion",
+    nodes: [
+      { parameters: { httpMethod: "POST", path: "slack-blocker-alert", responseMode: "onReceived" }, name: "Blocker Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [250, 300] },
+      { parameters: { jsCode: `const event = $input.first().json.body?.event || $input.first().json;\nconst text = event.text || '';\nconst blockerMatch = text.match(/(?:BLOCKER:|BLOCKED:)\\s*(.+)/i);\nif (!blockerMatch) return [];\nconst description = blockerMatch[1].trim();\nconst featureMatch = text.match(/\\[([^\\]]+)\\]/); // e.g., [Auth], [n8n]\nconst feature = featureMatch ? featureMatch[1] : 'General';\nreturn [{json: { blocker: description, feature, user: event.user, channel: event.channel, ts: event.ts, timestamp: new Date().toISOString() }}];` }, name: "Parse Blocker", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
+      { parameters: { resource: "databasePage", databaseId: "={{ $env.NOTION_BLOCKERS_DB }}", title: "=BLOCKER: {{ $json.blocker.substring(0, 100) }}", propertiesUi: { propertyValues: [{ key: "Status", type: "select", selectValue: "Active" }, { key: "Feature", type: "select", selectValue: "={{ $json.feature }}" }, { key: "Description", type: "richText", textContent: "={{ $json.blocker }}" }, { key: "Reported", type: "date", date: "={{ $json.timestamp }}" }, { key: "Priority", type: "select", selectValue: "High" }] } }, name: "Create Notion Blocker", type: "n8n-nodes-base.notion", typeVersion: 2.2, position: [750, 300] },
+      { parameters: { channel: "#clawstak-alerts", text: "=BLOCKER reported: {{ $json.blocker }}\nFeature: {{ $json.feature }}\nReported by: <@{{ $json.user }}>" }, name: "Alert Founder", type: "n8n-nodes-base.slack", typeVersion: 2.2, position: [1000, 200] },
+      { parameters: { fromEmail: "alerts@clawstak.ai", toEmail: "founder@clawstak.ai", subject: "=BLOCKER: {{ $json.feature }} - {{ $json.blocker.substring(0, 50) }}", html: "=<h2>Blocker Reported</h2><p><strong>Feature:</strong> {{ $json.feature }}</p><p><strong>Description:</strong> {{ $json.blocker }}</p><p><strong>Reported:</strong> {{ $json.timestamp }}</p>" }, name: "Email Founder", type: "n8n-nodes-base.emailSend", typeVersion: 2.1, position: [1000, 400] },
+    ],
+    connections: { "Blocker Webhook": { main: [[{ node: "Parse Blocker", type: "main", index: 0 }]] }, "Parse Blocker": { main: [[{ node: "Create Notion Blocker", type: "main", index: 0 }]] }, "Create Notion Blocker": { main: [[{ node: "Alert Founder", type: "main", index: 0 }, { node: "Email Founder", type: "main", index: 0 }]] } },
+    settings: { executionOrder: "v1" },
+  },
+
+  // 19. Slack Completion Logger → Update Notion
+  {
+    name: "19. Slack Completion Logger → Notion",
+    nodes: [
+      { parameters: { httpMethod: "POST", path: "slack-completion-log", responseMode: "onReceived" }, name: "Completion Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [250, 300] },
+      { parameters: { jsCode: `const event = $input.first().json.body?.event || $input.first().json;\nconst text = event.text || '';\nconst completeMatch = text.match(/(?:COMPLETE:|DONE:)\\s*(.+)/i);\nif (!completeMatch) return [];\nconst description = completeMatch[1].trim();\nreturn [{json: { completion: description, user: event.user, channel: event.channel, ts: event.ts, timestamp: new Date().toISOString() }}];` }, name: "Parse Completion", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
+      { parameters: { resource: "databasePage", databaseId: "={{ $env.NOTION_CHANGELOG_DB }}", title: "=DONE: {{ $json.completion.substring(0, 100) }}", propertiesUi: { propertyValues: [{ key: "Type", type: "select", selectValue: "Completion" }, { key: "Description", type: "richText", textContent: "={{ $json.completion }}" }, { key: "Completed By", type: "richText", textContent: "={{ $json.user }}" }, { key: "Completed At", type: "date", date: "={{ $json.timestamp }}" }] } }, name: "Log to Changelog", type: "n8n-nodes-base.notion", typeVersion: 2.2, position: [750, 300] },
+      { parameters: { channel: "#clawstak-wins", text: "={{ $json.completion }}" }, name: "Celebrate in Slack", type: "n8n-nodes-base.slack", typeVersion: 2.2, position: [1000, 300] },
+    ],
+    connections: { "Completion Webhook": { main: [[{ node: "Parse Completion", type: "main", index: 0 }]] }, "Parse Completion": { main: [[{ node: "Log to Changelog", type: "main", index: 0 }]] }, "Log to Changelog": { main: [[{ node: "Celebrate in Slack", type: "main", index: 0 }]] } },
+    settings: { executionOrder: "v1" },
+  },
+
+  // 20. A2A Conversation Tracker → Notion Summary
+  {
+    name: "20. A2A Conversation Tracker → Notion",
+    nodes: [
+      { parameters: { httpMethod: "POST", path: "slack-a2a-tracker", responseMode: "onReceived" }, name: "A2A Webhook", type: "n8n-nodes-base.webhook", typeVersion: 1.1, position: [250, 300] },
+      { parameters: { jsCode: `const event = $input.first().json.body?.event || $input.first().json;\nconst text = event.text || '';\nconst threadTs = event.thread_ts || event.ts;\nconst channel = event.channel;\nconst isA2A = text.includes('A2A:') || (event.bot_id && event.thread_ts);\nif (!isA2A) return [];\nreturn [{json: { text, threadTs, channel, user: event.user || event.bot_id, isBot: !!event.bot_id, timestamp: new Date().toISOString() }}];` }, name: "Parse A2A Message", type: "n8n-nodes-base.code", typeVersion: 2, position: [500, 300] },
+      { parameters: { model: "gpt-4o-mini", messages: { values: [{ role: "system", content: "Summarize this agent-to-agent conversation. Extract: key decisions, action items, insights. Return JSON: {\"summary\": \"2-3 sentences\", \"decisions\": [\"...\"], \"actions\": [\"...\"], \"participants\": [\"...\"]}" }, { role: "user", content: "=A2A Message: {{ $json.text }}" }] }, options: { temperature: 0.3 } }, name: "AI Summarize", type: "@n8n/n8n-nodes-langchain.openAi", typeVersion: 1, position: [750, 300] },
+      { parameters: { resource: "databasePage", databaseId: "={{ $env.NOTION_A2A_DB }}", title: "=A2A: {{ $json.timestamp }}", propertiesUi: { propertyValues: [{ key: "Thread ID", type: "richText", textContent: "={{ $('Parse A2A Message').first().json.threadTs }}" }, { key: "Channel", type: "richText", textContent: "={{ $('Parse A2A Message').first().json.channel }}" }, { key: "Summary", type: "richText", textContent: "={{ $json.message?.content || $json.text }}" }, { key: "Timestamp", type: "date", date: "={{ $('Parse A2A Message').first().json.timestamp }}" }] } }, name: "Log to Notion", type: "n8n-nodes-base.notion", typeVersion: 2.2, position: [1000, 300] },
+    ],
+    connections: { "A2A Webhook": { main: [[{ node: "Parse A2A Message", type: "main", index: 0 }]] }, "Parse A2A Message": { main: [[{ node: "AI Summarize", type: "main", index: 0 }]] }, "AI Summarize": { main: [[{ node: "Log to Notion", type: "main", index: 0 }]] } },
+    settings: { executionOrder: "v1" },
+  },
 ];
 
 // ── Main ──
@@ -266,12 +335,18 @@ async function main() {
 
   console.log(`\nn8n setup complete! Created: ${created}, Failed: ${failed}`);
   console.log("\nWebhook URLs:");
-  console.log(`  User Created:   ${N8N_WEBHOOK_URL}/webhook/user-created`);
+  console.log(`  User Created:     ${N8N_WEBHOOK_URL}/webhook/user-created`);
   console.log(`  Agent Registered: ${N8N_WEBHOOK_URL}/webhook/agent-registered`);
-  console.log(`  Publication:    ${N8N_WEBHOOK_URL}/webhook/publication-created`);
-  console.log(`  Stripe:         ${N8N_WEBHOOK_URL}/webhook/stripe-event`);
-  console.log(`  Linear:         ${N8N_WEBHOOK_URL}/webhook/linear-update`);
-  console.log(`  Collaboration:  ${N8N_WEBHOOK_URL}/webhook/collaboration-event`);
+  console.log(`  Publication:      ${N8N_WEBHOOK_URL}/webhook/publication-created`);
+  console.log(`  Stripe:           ${N8N_WEBHOOK_URL}/webhook/stripe-event`);
+  console.log(`  Linear:           ${N8N_WEBHOOK_URL}/webhook/linear-update`);
+  console.log(`  Collaboration:    ${N8N_WEBHOOK_URL}/webhook/collaboration-event`);
+  console.log("\n  === Slack → Notion Sync ===");
+  console.log(`  Slack Message Log:   ${N8N_WEBHOOK_URL}/webhook/slack-message-log`);
+  console.log(`  Slack Task Tracker:  ${N8N_WEBHOOK_URL}/webhook/slack-task-tracker`);
+  console.log(`  Slack Blocker Alert: ${N8N_WEBHOOK_URL}/webhook/slack-blocker-alert`);
+  console.log(`  Slack Completion:    ${N8N_WEBHOOK_URL}/webhook/slack-completion-log`);
+  console.log(`  Slack A2A Tracker:   ${N8N_WEBHOOK_URL}/webhook/slack-a2a-tracker`);
 }
 
 main().catch(console.error);
