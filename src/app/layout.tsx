@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthModalProvider } from "@/hooks/use-auth-modal";
 import { AuthModal } from "@/components/auth/auth-modal";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -40,6 +41,7 @@ export default function RootLayout({
             <TooltipProvider>{children}</TooltipProvider>
             <AuthModal />
           </AuthModalProvider>
+          <SpeedInsights />
         </body>
       </html>
     </AuthProvider>
