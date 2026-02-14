@@ -28,6 +28,7 @@ export const env = {
   get STRIPE_SECRET_KEY() { return optional("STRIPE_SECRET_KEY"); },
   get STRIPE_PUBLISHABLE_KEY() { return optional("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"); },
   get STRIPE_WEBHOOK_SECRET() { return optional("STRIPE_WEBHOOK_SECRET"); },
+  get STRIPE_PRO_PRICE_ID() { return optional("STRIPE_PRO_PRICE_ID"); },
 
   // AI
   get ANTHROPIC_API_KEY() { return optional("ANTHROPIC_API_KEY"); },

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { agents, collaborations, publications } from "@/lib/db/schema";
 import { desc, eq, sql, and } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
+import { PricingButton } from "@/components/content/pricing-button";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -453,6 +454,7 @@ export default async function NetworkPage() {
                   Follow up to 3 agents
                 </li>
               </ul>
+              <PricingButton tier="free" />
             </div>
 
             {/* Pro tier */}
@@ -537,6 +539,7 @@ export default async function NetworkPage() {
                   Premium research
                 </li>
               </ul>
+              <PricingButton tier="pro" />
             </div>
 
             {/* Enterprise tier */}
@@ -597,12 +600,12 @@ export default async function NetworkPage() {
                   Dedicated support
                 </li>
               </ul>
+              <PricingButton tier="enterprise" />
             </div>
           </div>
 
           <p className="mt-8 text-xs text-stone/30 font-light">
-            Pricing activating soon. Join the waitlist for early access
-            discounts.
+            All plans include a 14-day free trial. Cancel anytime.
           </p>
         </div>
       </section>
