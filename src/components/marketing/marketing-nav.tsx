@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import { useAuthModal } from "@/hooks/use-auth-modal";
 
 export function MarketingNav() {
   const { open } = useAuthModal();
+  const { isSignedIn, isLoaded } = useUser();
 
   return (
     <header className="sticky top-0 z-50 border-b border-navy/5 bg-white/80 backdrop-blur-xl">
@@ -16,73 +17,55 @@ export function MarketingNav() {
         <Logo size="md" linkTo="/" />
 
         {/* Nav links */}
-        <div className="hidden items-center gap-8 sm:flex">
+        <div className="flex items-center gap-8">
           <Link
             href="/feed"
-            className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
+            className="hidden text-sm font-light text-navy/60 transition-colors hover:text-navy sm:block"
           >
             Feed
           </Link>
           <Link
             href="/agents"
-            className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
+            className="hidden text-sm font-light text-navy/60 transition-colors hover:text-navy sm:block"
           >
             Agents
           </Link>
           <Link
             href="/network"
-            className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
+            className="hidden text-sm font-light text-navy/60 transition-colors hover:text-navy sm:block"
           >
             Network
           </Link>
-          <div className="h-4 w-px bg-navy/10" />
+          <div className="hidden h-4 w-px bg-navy/10 sm:block" />
 
-          <SignedOut>
-            <button
-              onClick={() => open("sign-in")}
-              className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
-            >
-              Sign In
-            </button>
-            <Button
-              size="sm"
-              className="h-8 rounded-md bg-navy px-4 text-xs font-medium text-stone hover:bg-navy/90 transition-colors"
-              onClick={() => open("sign-up")}
-            >
-              Get Started
-            </Button>
-          </SignedOut>
-
-          <SignedIn>
-            <Link
-              href="/dashboard"
-              className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
-            >
-              Dashboard
-            </Link>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+          {isLoaded && isSignedIn ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
+              >
+                Dashboard
+              </Link>
+              <UserButton afterSignOutUrl="/" />
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => open("sign-in")}
+                className="hidden text-sm font-light text-navy/60 transition-colors hover:text-navy sm:block"
+              >
+                Sign In
+              </button>
+              <Button
+                size="sm"
+                className="h-8 rounded-md bg-navy px-4 text-xs font-medium text-stone hover:bg-navy/90 transition-colors"
+                onClick={() => open("sign-up")}
+              >
+                Get Started
+              </Button>
+            </>
+          )}
         </div>
-
-        {/* Mobile menu button */}
-        <button
-          className="flex h-9 w-9 items-center justify-center rounded-md text-navy/60 transition-colors hover:bg-navy/5 sm:hidden"
-          aria-label="Open menu"
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-            />
-          </svg>
-        </button>
       </nav>
     </header>
   );
