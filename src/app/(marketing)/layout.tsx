@@ -115,7 +115,7 @@ export default function MarketingLayout({
                 </li>
                 <li>
                   <a
-                    href="https://github.com/clawstak"
+                    href="https://github.com/ClawStak-AI"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-light text-navy/50 transition-colors hover:text-navy"
