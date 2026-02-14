@@ -5,8 +5,8 @@ If your context gets compacted, READ THIS FILE FIRST to know exactly where you a
 
 ## Current Status
 - **Active Batch**: Post-Batch 1 — Content Platform + Agent Network
-- **Last Completed Step**: 9 agents seeded, 13 publications live, comments system, search, network page, logo, AI writer pipeline, deployed to Vercel
-- **Next Step**: Debug /network 404 + /sign-in 500 on production, check n8n Docker, build marketing agents, wire Stripe payments
+- **Last Completed Step**: Slack channel organization (19 channels across 5 categories with app assignments)
+- **Next Step**: Manus creates Notion databases, run setup-slack-channels.ts, debug production routes
 - **Blocking Issues**:
   - Anthropic API key returns 401 (expired?) — AI content generation scripts won't work until refreshed
   - /network returns 404 on production despite being in build output
@@ -27,9 +27,23 @@ If your context gets compacted, READ THIS FILE FIRST to know exactly where you a
 
 ## n8n Automation
 - **Docker Compose**: docker-compose.yml at project root
-- **URL**: localhost:5678
-- **4 Workflows**: Email Triage Bot, Weekly Analytics Digest, Build Pipeline, Global Error Handler
+- **URL**: localhost:5678 (local) / https://clawstak.app.n8n.cloud (production)
+- **15 Workflows**: User Welcome, Agent Registration, Content Pipeline, Weekly Analytics, Daily Snapshot, Stripe Processing, Email Triage, Linear Pipeline, Error Handler, Collaboration Notifications, Content Recommendations, Milestones, Uptime Monitoring, Profile Enrichment, PostHog Sync
 - **Status**: NEEDS CHECK — verify Docker container is running
+
+## Slack Channel Organization (NEW)
+- **Documentation**: SLACK-CHANNELS.md — Complete channel hierarchy and app assignments
+- **Setup Script**: scripts/setup-slack-channels.ts — Creates channels via Slack API
+- **Config File**: config/slack-channels.json — Structured config for Notion/Manus integration
+- **Categories**:
+  - **Engineering** (4 channels): dev, builds, errors, infra
+  - **Product** (4 channels): agents, content, milestones, feedback
+  - **Business** (4 channels): revenue, metrics, alerts, partnerships
+  - **Team** (4 channels): general, a2a, automation, wins
+  - **External** (3 channels): support, urgent, daily-digest
+- **Total**: 19 organized channels with clear delineations
+- **Apps Tagged**: n8n, Linear, GitHub, Claude, Manus, Notion, Stripe, PostHog, Vercel, PagerDuty, Intercom
+- **Status**: Configuration complete, ready for Manus to sync with Notion
 
 ## What Exists (verified files)
 
@@ -103,7 +117,8 @@ button, card, input, label, badge, separator, dialog, dropdown-menu, sheet, tabs
 - scripts/seed-more-agents.ts — 6 additional agents + description updates
 - scripts/seed-all-content.ts — 10 comprehensive articles across all agents
 - scripts/generate-content.ts — CLI for AI-powered article generation (needs working API key)
-- scripts/setup-n8n.ts — Programmatic n8n workflow setup
+- scripts/setup-n8n.ts — Programmatic n8n workflow setup (15 workflows)
+- scripts/setup-slack-channels.ts — Creates organized Slack channels with app assignments
 
 ### Config
 - drizzle.config.ts
@@ -111,6 +126,7 @@ button, card, input, label, badge, separator, dialog, dropdown-menu, sheet, tabs
 - next.config.ts
 - docker-compose.yml — n8n deployment
 - tailwind via globals.css (v4)
+- config/slack-channels.json — Slack channel structure and app mappings for Notion sync
 
 ## Environment Variables (.env.local)
 - DATABASE_URL ✅
@@ -142,6 +158,10 @@ button, card, input, label, badge, separator, dialog, dropdown-menu, sheet, tabs
 6. Wire Stripe payment flows to pricing tiers
 7. Agent collaboration features (LinkedIn-for-agents concept)
 8. Monetization infrastructure (subscriptions, premium content)
+9. ✅ DONE: Slack channel organization (19 channels, 5 categories, app assignments)
+10. Manus: Create Notion databases matching config/slack-channels.json
+11. Run `npx tsx scripts/setup-slack-channels.ts` to create Slack channels
+12. Set up n8n workflows to sync Slack → Notion
 
 ## Decisions Log
 See DECISIONS.md for D001-D021 architectural decisions.

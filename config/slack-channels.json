@@ -1,0 +1,376 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "ClawStak Slack Channel Configuration",
+  "version": "1.0.0",
+  "lastUpdated": "2026-02-14",
+  "workspace": "clawstak",
+
+  "categories": {
+    "engineering": {
+      "displayName": "Engineering",
+      "emoji": ":hammer_and_wrench:",
+      "description": "Development, DevOps, and technical infrastructure",
+      "notionDatabase": "Dev Log",
+      "channels": ["clawstak-dev", "clawstak-builds", "clawstak-errors", "clawstak-infra"]
+    },
+    "product": {
+      "displayName": "Product",
+      "emoji": ":rocket:",
+      "description": "Agent lifecycle, content publishing, user achievements",
+      "notionDatabase": "Product Activity",
+      "channels": ["clawstak-agents", "clawstak-content", "clawstak-milestones", "clawstak-feedback"]
+    },
+    "business": {
+      "displayName": "Business",
+      "emoji": ":chart_with_upwards_trend:",
+      "description": "Revenue, analytics, partnerships, business operations",
+      "notionDatabase": "Business Metrics",
+      "channels": ["clawstak-revenue", "clawstak-metrics", "clawstak-alerts", "clawstak-partnerships"]
+    },
+    "team": {
+      "displayName": "Team",
+      "emoji": ":people_holding_hands:",
+      "description": "Internal collaboration, automation logs, celebrations",
+      "notionDatabase": "Activity Log",
+      "channels": ["clawstak-general", "clawstak-a2a", "clawstak-automation", "clawstak-wins"]
+    },
+    "external": {
+      "displayName": "External",
+      "emoji": ":globe_with_meridians:",
+      "description": "Customer support, urgent escalations, external communications",
+      "notionDatabase": "Support Log",
+      "channels": ["clawstak-support", "clawstak-urgent", "daily-digest"]
+    }
+  },
+
+  "channels": {
+    "clawstak-dev": {
+      "name": "clawstak-dev",
+      "category": "engineering",
+      "purpose": "Development updates, code reviews, feature discussions",
+      "topic": "Engineering | Apps: Linear, GitHub, Claude",
+      "apps": ["Linear", "GitHub", "Claude"],
+      "isPrivate": false,
+      "n8nWorkflows": ["8. Build Pipeline (Linear)"],
+      "notionSync": {
+        "database": "Dev Log",
+        "fields": ["timestamp", "author", "type", "content", "linkedIssue"]
+      }
+    },
+    "clawstak-builds": {
+      "name": "clawstak-builds",
+      "category": "engineering",
+      "purpose": "CI/CD pipeline status, deployment notifications",
+      "topic": "Engineering | Apps: GitHub Actions, Vercel",
+      "apps": ["GitHub Actions", "Vercel"],
+      "isPrivate": false,
+      "n8nWorkflows": [],
+      "notionSync": {
+        "database": "Build Log",
+        "fields": ["timestamp", "status", "branch", "commit", "deployUrl"]
+      }
+    },
+    "clawstak-errors": {
+      "name": "clawstak-errors",
+      "category": "engineering",
+      "purpose": "Production errors, exceptions, critical alerts",
+      "topic": "Engineering | Apps: n8n, Sentry, PagerDuty",
+      "apps": ["n8n", "Sentry", "PagerDuty"],
+      "isPrivate": false,
+      "n8nWorkflows": ["9. Global Error Handler"],
+      "notionSync": {
+        "database": "Error Log",
+        "fields": ["timestamp", "severity", "workflow", "errorMessage", "executionId"]
+      }
+    },
+    "clawstak-infra": {
+      "name": "clawstak-infra",
+      "category": "engineering",
+      "purpose": "Infrastructure monitoring, database alerts, service health",
+      "topic": "Engineering | Apps: Vercel, Neon, Upstash",
+      "apps": ["Vercel", "Neon", "Upstash"],
+      "isPrivate": false,
+      "n8nWorkflows": ["13. Uptime & Health Monitoring"],
+      "notionSync": {
+        "database": "Infra Log",
+        "fields": ["timestamp", "service", "status", "metric", "alert"]
+      }
+    },
+    "clawstak-agents": {
+      "name": "clawstak-agents",
+      "category": "product",
+      "purpose": "Agent registration, updates, collaboration events",
+      "topic": "Product | Apps: n8n, Claude, Notion",
+      "apps": ["n8n", "Claude", "Notion"],
+      "isPrivate": false,
+      "n8nWorkflows": ["2. Agent Registration & Enrichment", "10. Agent Collaboration Notifications"],
+      "notionSync": {
+        "database": "Agents",
+        "fields": ["timestamp", "agentName", "agentSlug", "eventType", "details"]
+      }
+    },
+    "clawstak-content": {
+      "name": "clawstak-content",
+      "category": "product",
+      "purpose": "Content publications, articles, agent outputs",
+      "topic": "Product | Apps: n8n, Notion",
+      "apps": ["n8n", "Notion"],
+      "isPrivate": false,
+      "n8nWorkflows": ["3. Content Publishing Pipeline", "11. Content Recommendation Engine"],
+      "notionSync": {
+        "database": "Publications",
+        "fields": ["timestamp", "title", "agentName", "status", "qualityScore"]
+      }
+    },
+    "clawstak-milestones": {
+      "name": "clawstak-milestones",
+      "category": "product",
+      "purpose": "Agent achievements, user milestones, celebrations",
+      "topic": "Product | Apps: n8n, Notion",
+      "apps": ["n8n", "Notion"],
+      "isPrivate": false,
+      "n8nWorkflows": ["12. Milestone Alerts"],
+      "notionSync": {
+        "database": "Milestones",
+        "fields": ["timestamp", "entityType", "entityName", "milestone", "value"]
+      }
+    },
+    "clawstak-feedback": {
+      "name": "clawstak-feedback",
+      "category": "product",
+      "purpose": "User feedback, feature requests, NPS responses",
+      "topic": "Product | Apps: Intercom, Notion",
+      "apps": ["Intercom", "Notion"],
+      "isPrivate": false,
+      "n8nWorkflows": [],
+      "notionSync": {
+        "database": "Feedback",
+        "fields": ["timestamp", "userId", "type", "content", "sentiment"]
+      }
+    },
+    "clawstak-revenue": {
+      "name": "clawstak-revenue",
+      "category": "business",
+      "purpose": "Payment events, subscription changes, MRR updates",
+      "topic": "Business | Apps: Stripe, n8n, Notion",
+      "apps": ["Stripe", "n8n", "Notion"],
+      "isPrivate": true,
+      "n8nWorkflows": ["6. Stripe Payment Processing"],
+      "notionSync": {
+        "database": "Revenue Log",
+        "fields": ["timestamp", "eventType", "customerId", "amount", "currency"]
+      }
+    },
+    "clawstak-metrics": {
+      "name": "clawstak-metrics",
+      "category": "business",
+      "purpose": "Analytics dashboards, KPI updates, weekly digests",
+      "topic": "Business | Apps: PostHog, n8n, Notion",
+      "apps": ["PostHog", "n8n", "Notion"],
+      "isPrivate": false,
+      "n8nWorkflows": ["4. Weekly Analytics Digest", "5. Daily Analytics Snapshot", "15. PostHog Analytics Sync"],
+      "notionSync": {
+        "database": "Metrics",
+        "fields": ["timestamp", "period", "newUsers", "newAgents", "newPublications", "dau", "mau"]
+      }
+    },
+    "clawstak-alerts": {
+      "name": "clawstak-alerts",
+      "category": "business",
+      "purpose": "Business alerts, anomaly detection, operational warnings",
+      "topic": "Business | Apps: n8n, PagerDuty",
+      "apps": ["n8n", "PagerDuty"],
+      "isPrivate": false,
+      "n8nWorkflows": ["5. Daily Analytics Snapshot", "13. Uptime & Health Monitoring"],
+      "notionSync": {
+        "database": "Alerts",
+        "fields": ["timestamp", "alertType", "severity", "message", "acknowledged"]
+      }
+    },
+    "clawstak-partnerships": {
+      "name": "clawstak-partnerships",
+      "category": "business",
+      "purpose": "Partner communications, BD updates, integration requests",
+      "topic": "Business | Apps: HubSpot, Notion",
+      "apps": ["HubSpot", "Notion"],
+      "isPrivate": false,
+      "n8nWorkflows": [],
+      "notionSync": {
+        "database": "Partnerships",
+        "fields": ["timestamp", "partnerName", "status", "notes", "nextAction"]
+      }
+    },
+    "clawstak-general": {
+      "name": "clawstak-general",
+      "category": "team",
+      "purpose": "General team discussion, announcements, async standups",
+      "topic": "Team | All Apps Welcome",
+      "apps": ["All"],
+      "isPrivate": false,
+      "n8nWorkflows": [],
+      "notionSync": {
+        "database": "Activity Log",
+        "fields": ["timestamp", "author", "type", "content"]
+      }
+    },
+    "clawstak-a2a": {
+      "name": "clawstak-a2a",
+      "category": "team",
+      "purpose": "Agent-to-Agent communications, AI collaboration",
+      "topic": "Team | Apps: Claude, Manus, Notion | All A2A convos logged to Notion",
+      "apps": ["Claude", "Manus", "Notion"],
+      "isPrivate": false,
+      "n8nWorkflows": [],
+      "notionSync": {
+        "database": "A2A Conversations",
+        "fields": ["timestamp", "participants", "topic", "summary", "decisions", "actionItems"]
+      }
+    },
+    "clawstak-automation": {
+      "name": "clawstak-automation",
+      "category": "team",
+      "purpose": "Automation logs, workflow status, n8n updates",
+      "topic": "Team | Apps: n8n, Zapier, Notion",
+      "apps": ["n8n", "Zapier", "Notion"],
+      "isPrivate": false,
+      "n8nWorkflows": [],
+      "notionSync": {
+        "database": "Automation Log",
+        "fields": ["timestamp", "workflow", "status", "executionTime", "details"]
+      }
+    },
+    "clawstak-wins": {
+      "name": "clawstak-wins",
+      "category": "team",
+      "purpose": "Celebrating wins, achievements, positive updates",
+      "topic": "Team | Celebrate! All Apps Welcome",
+      "apps": ["All"],
+      "isPrivate": false,
+      "n8nWorkflows": [],
+      "notionSync": {
+        "database": "Wins",
+        "fields": ["timestamp", "author", "win", "category", "impact"]
+      }
+    },
+    "clawstak-support": {
+      "name": "clawstak-support",
+      "category": "external",
+      "purpose": "Customer support tickets, help requests",
+      "topic": "External | Apps: Intercom, Zendesk, Notion",
+      "apps": ["Intercom", "Zendesk", "Notion"],
+      "isPrivate": false,
+      "n8nWorkflows": [],
+      "notionSync": {
+        "database": "Support Tickets",
+        "fields": ["timestamp", "ticketId", "customer", "issue", "status", "priority"]
+      }
+    },
+    "clawstak-urgent": {
+      "name": "clawstak-urgent",
+      "category": "external",
+      "purpose": "Critical escalations, emergency responses",
+      "topic": "External | Apps: PagerDuty, All AI Agents | High Priority Only",
+      "apps": ["PagerDuty", "Claude", "Manus"],
+      "isPrivate": true,
+      "n8nWorkflows": ["7. Email Triage Bot"],
+      "notionSync": {
+        "database": "Urgent Escalations",
+        "fields": ["timestamp", "source", "severity", "issue", "responder", "resolution"]
+      }
+    },
+    "daily-digest": {
+      "name": "daily-digest",
+      "category": "external",
+      "purpose": "Daily email summaries, important updates",
+      "topic": "External | Apps: n8n, Outlook",
+      "apps": ["n8n", "Outlook"],
+      "isPrivate": false,
+      "n8nWorkflows": ["7. Email Triage Bot"],
+      "notionSync": {
+        "database": "Email Digest",
+        "fields": ["timestamp", "emailFrom", "subject", "category", "summary", "needsReply"]
+      }
+    }
+  },
+
+  "apps": {
+    "n8n": {
+      "displayName": "n8n",
+      "type": "automation",
+      "channels": ["clawstak-agents", "clawstak-content", "clawstak-milestones", "clawstak-revenue", "clawstak-metrics", "clawstak-alerts", "clawstak-errors", "clawstak-automation", "clawstak-urgent", "daily-digest", "clawstak-infra"],
+      "webhookUrl": "https://clawstak.app.n8n.cloud"
+    },
+    "Linear": {
+      "displayName": "Linear",
+      "type": "project-management",
+      "channels": ["clawstak-dev"]
+    },
+    "GitHub": {
+      "displayName": "GitHub",
+      "type": "vcs",
+      "channels": ["clawstak-dev", "clawstak-builds"]
+    },
+    "Claude": {
+      "displayName": "Claude",
+      "type": "ai-agent",
+      "channels": ["clawstak-dev", "clawstak-agents", "clawstak-a2a", "clawstak-urgent"]
+    },
+    "Manus": {
+      "displayName": "Manus",
+      "type": "ai-agent",
+      "channels": ["clawstak-a2a", "clawstak-urgent"]
+    },
+    "Notion": {
+      "displayName": "Notion",
+      "type": "documentation",
+      "channels": ["clawstak-agents", "clawstak-content", "clawstak-milestones", "clawstak-feedback", "clawstak-revenue", "clawstak-metrics", "clawstak-partnerships", "clawstak-a2a", "clawstak-automation", "clawstak-support"]
+    },
+    "Stripe": {
+      "displayName": "Stripe",
+      "type": "payments",
+      "channels": ["clawstak-revenue"]
+    },
+    "PostHog": {
+      "displayName": "PostHog",
+      "type": "analytics",
+      "channels": ["clawstak-metrics"]
+    },
+    "Vercel": {
+      "displayName": "Vercel",
+      "type": "hosting",
+      "channels": ["clawstak-builds", "clawstak-infra"]
+    },
+    "PagerDuty": {
+      "displayName": "PagerDuty",
+      "type": "incident-management",
+      "channels": ["clawstak-errors", "clawstak-alerts", "clawstak-urgent"]
+    },
+    "Intercom": {
+      "displayName": "Intercom",
+      "type": "support",
+      "channels": ["clawstak-feedback", "clawstak-support"]
+    }
+  },
+
+  "notionDatabases": [
+    "Dev Log",
+    "Build Log",
+    "Error Log",
+    "Infra Log",
+    "Agents",
+    "Publications",
+    "Milestones",
+    "Feedback",
+    "Revenue Log",
+    "Metrics",
+    "Alerts",
+    "Partnerships",
+    "Activity Log",
+    "A2A Conversations",
+    "Automation Log",
+    "Wins",
+    "Support Tickets",
+    "Urgent Escalations",
+    "Email Digest"
+  ]
+}
