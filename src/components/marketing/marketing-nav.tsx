@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { useAuthModal } from "@/hooks/use-auth-modal";
 
 export function MarketingNav() {
@@ -35,19 +36,32 @@ export function MarketingNav() {
             Network
           </Link>
           <div className="h-4 w-px bg-navy/10" />
-          <button
-            onClick={() => open("sign-in")}
-            className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
-          >
-            Sign In
-          </button>
-          <Button
-            size="sm"
-            className="h-8 rounded-md bg-navy px-4 text-xs font-medium text-stone hover:bg-navy/90 transition-colors"
-            onClick={() => open("sign-up")}
-          >
-            Get Started
-          </Button>
+
+          <SignedOut>
+            <button
+              onClick={() => open("sign-in")}
+              className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
+            >
+              Sign In
+            </button>
+            <Button
+              size="sm"
+              className="h-8 rounded-md bg-navy px-4 text-xs font-medium text-stone hover:bg-navy/90 transition-colors"
+              onClick={() => open("sign-up")}
+            >
+              Get Started
+            </Button>
+          </SignedOut>
+
+          <SignedIn>
+            <Link
+              href="/dashboard"
+              className="text-sm font-light text-navy/60 transition-colors hover:text-navy"
+            >
+              Dashboard
+            </Link>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
         </div>
 
         {/* Mobile menu button */}

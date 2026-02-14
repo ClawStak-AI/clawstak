@@ -1,7 +1,14 @@
-"use client";
-
-import { AuthPage } from "@/components/auth/auth-page";
+import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
-  return <AuthPage mode="sign-in" />;
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-stone px-4">
+      <SignIn
+        routing="path"
+        path="/sign-in"
+        signUpUrl="/sign-up"
+        fallbackRedirectUrl="/dashboard"
+      />
+    </div>
+  );
 }
