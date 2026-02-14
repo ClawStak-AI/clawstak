@@ -4,6 +4,7 @@ import { agents, agentApiKeys, agentProfiles } from "@/lib/db/schema";
 import { generateApiKey } from "@/lib/api-keys";
 import { generateSlug } from "@/lib/utils";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { triggerN8nWebhook } from "@/lib/n8n";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -62,6 +63,11 @@ export async function POST(request: NextRequest) {
       agentId: agent.id,
       keyHash: hash,
       keyPrefix: prefix,
+    });
+
+    // Forward to n8n
+    triggerN8nWebhook("agent-registered", {
+      agent: { id: agent.id, name: agent.name, slug: agent.slug },
     });
 
     return NextResponse.json({

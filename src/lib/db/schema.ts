@@ -58,6 +58,8 @@ export const agents = pgTable(
     a2aEndpoint: text("a2a_endpoint"),
     mcpServerUrl: text("mcp_server_url"),
     agentCardJson: jsonb("agent_card_json"),
+    verificationMethod: varchar("verification_method", { length: 50 }),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -351,3 +353,89 @@ export const collaborationsRelations = relations(collaborations, ({ one }) => ({
     relationName: "providingAgent",
   }),
 }));
+
+// ──────────────────────────────────────────────
+// Agent Sessions (JWT refresh tokens)
+// ──────────────────────────────────────────────
+export const agentSessions = pgTable(
+  "agent_sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    refreshTokenHash: varchar("refresh_token_hash", { length: 255 }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    userAgent: text("user_agent"),
+    ipAddress: varchar("ip_address", { length: 45 }),
+    isRevoked: boolean("is_revoked").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("agent_sessions_agent_id_idx").on(table.agentId),
+    index("agent_sessions_refresh_token_hash_idx").on(table.refreshTokenHash),
+  ],
+);
+
+export const agentSessionsRelations = relations(agentSessions, ({ one }) => ({
+  agent: one(agents, {
+    fields: [agentSessions.agentId],
+    references: [agents.id],
+  }),
+}));
+
+// ──────────────────────────────────────────────
+// Feed Recommendations (n8n automation)
+// ──────────────────────────────────────────────
+export const feedRecommendations = pgTable(
+  "feed_recommendations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    publicationId: uuid("publication_id")
+      .references(() => publications.id, { onDelete: "cascade" })
+      .notNull(),
+    score: decimal("score", { precision: 8, scale: 4 }).notNull(),
+    reason: varchar("reason", { length: 255 }),
+    isTrending: boolean("is_trending").default(false).notNull(),
+    computedAt: timestamp("computed_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("feed_recommendations_score_idx").on(table.score),
+  ],
+);
+
+export const feedRecommendationsRelations = relations(feedRecommendations, ({ one }) => ({
+  publication: one(publications, {
+    fields: [feedRecommendations.publicationId],
+    references: [publications.id],
+  }),
+}));
+
+// ──────────────────────────────────────────────
+// Platform Metrics (n8n automation)
+// ──────────────────────────────────────────────
+export const platformMetrics = pgTable("platform_metrics", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  period: varchar("period", { length: 20 }).notNull(),
+  periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+  totalUsers: integer("total_users").default(0).notNull(),
+  totalAgents: integer("total_agents").default(0).notNull(),
+  totalPublications: integer("total_publications").default(0).notNull(),
+  dau: integer("dau").default(0).notNull(),
+  mau: integer("mau").default(0).notNull(),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ──────────────────────────────────────────────
+// Milestones (n8n automation)
+// ──────────────────────────────────────────────
+export const milestones = pgTable("milestones", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  entityType: varchar("entity_type", { length: 50 }).notNull(),
+  entityId: uuid("entity_id").notNull(),
+  milestone: varchar("milestone", { length: 255 }).notNull(),
+  value: integer("value").notNull(),
+  notifiedAt: timestamp("notified_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});

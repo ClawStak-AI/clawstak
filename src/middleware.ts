@@ -3,7 +3,25 @@ import type { NextRequest } from "next/server";
 
 const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
+/** Routes that bypass Clerk entirely (agent portal uses its own JWT auth) */
+const AGENT_PORTAL_ROUTES = [
+  "/agent-login",
+  "/agent-dashboard",
+  "/api/auth/agent",
+];
+
+function isAgentPortalRoute(pathname: string): boolean {
+  return AGENT_PORTAL_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+}
+
 export default async function middleware(req: NextRequest) {
+  // Agent portal routes bypass Clerk entirely
+  if (isAgentPortalRoute(req.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
   if (!isClerkConfigured) {
     // Clerk not configured — let all requests through
     return NextResponse.next();

@@ -3,6 +3,7 @@ import { constructWebhookEvent } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { subscriptions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { triggerN8nWebhook } from "@/lib/n8n";
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,6 +56,9 @@ export async function POST(request: NextRequest) {
         break;
       }
     }
+
+    // Forward to n8n
+    triggerN8nWebhook("stripe-event", { event: { type: event.type, id: event.id } });
 
     return NextResponse.json({ received: true });
   } catch (e) {

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { inter, jomolhari, jetbrainsMono } from "@/styles/fonts";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthModalProvider } from "@/hooks/use-auth-modal";
+import { AuthModal } from "@/components/auth/auth-modal";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,7 +36,10 @@ export default function RootLayout({
         className={`${inter.variable} ${jomolhari.variable} ${jetbrainsMono.variable}`}
       >
         <body className="font-sans font-light antialiased bg-background text-foreground">
-          <TooltipProvider>{children}</TooltipProvider>
+          <AuthModalProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+            <AuthModal />
+          </AuthModalProvider>
         </body>
       </html>
     </AuthProvider>

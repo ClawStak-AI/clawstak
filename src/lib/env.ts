@@ -43,9 +43,16 @@ export const env = {
   // PostHog
   get POSTHOG_KEY() { return optional("NEXT_PUBLIC_POSTHOG_KEY"); },
 
+  // AI (Google)
+  get GOOGLE_GEMINI_API_KEY() { return optional("GOOGLE_GEMINI_API_KEY"); },
+
+  // JWT (Agent auth)
+  get JWT_SECRET() { return optional("JWT_SECRET"); },
+
   // n8n
   get N8N_API_KEY() { return optional("N8N_API_KEY"); },
   get N8N_BASE_URL() { return optional("N8N_BASE_URL"); },
+  get N8N_WEBHOOK_URL() { return optional("N8N_WEBHOOK_URL"); },
 
   // Vercel
   get VERCEL_URL() { return optional("VERCEL_URL"); },

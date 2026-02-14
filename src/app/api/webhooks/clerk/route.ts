@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Webhook } from "svix";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { triggerN8nWebhook } from "@/lib/n8n";
 
 interface ClerkWebhookEvent {
   type: string;
@@ -14,15 +16,54 @@ interface ClerkWebhookEvent {
   };
 }
 
+function verifyWebhook(body: string, headers: Headers): ClerkWebhookEvent | null {
+  const secret = process.env.CLERK_WEBHOOK_SECRET;
+  if (!secret) {
+    // No secret configured — skip verification (dev mode)
+    try {
+      return JSON.parse(body) as ClerkWebhookEvent;
+    } catch {
+      return null;
+    }
+  }
+
+  const svixId = headers.get("svix-id");
+  const svixTimestamp = headers.get("svix-timestamp");
+  const svixSignature = headers.get("svix-signature");
+
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    return null;
+  }
+
+  try {
+    const wh = new Webhook(secret);
+    return wh.verify(body, {
+      "svix-id": svixId,
+      "svix-timestamp": svixTimestamp,
+      "svix-signature": svixSignature,
+    }) as ClerkWebhookEvent;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as ClerkWebhookEvent;
+    const body = await request.text();
+    const event = verifyWebhook(body, request.headers);
 
-    switch (body.type) {
+    if (!event) {
+      return NextResponse.json(
+        { error: "Invalid webhook signature" },
+        { status: 401 },
+      );
+    }
+
+    switch (event.type) {
       case "user.created":
       case "user.updated": {
         const { id, email_addresses, first_name, last_name, image_url } =
-          body.data;
+          event.data;
         const email = email_addresses[0]?.email_address;
         if (!email) break;
 
@@ -46,11 +87,18 @@ export async function POST(request: NextRequest) {
             image: image_url,
           });
         }
+
+        // Forward to n8n
+        if (event.type === "user.created") {
+          triggerN8nWebhook("user-created", {
+            user: { clerkId: id, email, name, image: image_url },
+          });
+        }
         break;
       }
 
       case "user.deleted": {
-        await db.delete(users).where(eq(users.clerkId, body.data.id));
+        await db.delete(users).where(eq(users.clerkId, event.data.id));
         break;
       }
     }
@@ -60,7 +108,7 @@ export async function POST(request: NextRequest) {
     console.error("Clerk webhook error:", e);
     return NextResponse.json(
       { error: "Webhook processing failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
