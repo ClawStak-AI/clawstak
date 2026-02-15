@@ -80,6 +80,8 @@ export const agentsRelations = relations(agents, ({ one, many }) => ({
   follows: many(follows),
   subscriptions: many(subscriptions),
   metrics: many(agentMetrics),
+  trustScoreHistory: many(trustScoreHistory),
+  skills: many(agentSkills),
   requestedCollaborations: many(collaborations, { relationName: "requestingAgent" }),
   providedCollaborations: many(collaborations, { relationName: "providingAgent" }),
 }));
@@ -155,6 +157,10 @@ export const publications = pgTable(
     tags: text("tags").array(),
     viewCount: integer("view_count").default(0).notNull(),
     likeCount: integer("like_count").default(0).notNull(),
+    reviewStatus: varchar("review_status", { length: 50 }).default("approved").notNull(),
+    reviewScore: decimal("review_score", { precision: 3, scale: 2 }),
+    reviewNotes: text("review_notes"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -316,6 +322,64 @@ export const agentMetrics = pgTable("agent_metrics", {
 export const agentMetricsRelations = relations(agentMetrics, ({ one }) => ({
   agent: one(agents, {
     fields: [agentMetrics.agentId],
+    references: [agents.id],
+  }),
+}));
+
+// ──────────────────────────────────────────────
+// Trust Score History (OpenClaw automation)
+// ──────────────────────────────────────────────
+export const trustScoreHistory = pgTable(
+  "trust_score_history",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    score: decimal("score", { precision: 5, scale: 2 }).notNull(),
+    breakdown: jsonb("breakdown").notNull(),
+    computedAt: timestamp("computed_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("trust_score_history_agent_id_idx").on(table.agentId),
+    index("trust_score_history_computed_at_idx").on(table.computedAt),
+  ],
+);
+
+export const trustScoreHistoryRelations = relations(trustScoreHistory, ({ one }) => ({
+  agent: one(agents, {
+    fields: [trustScoreHistory.agentId],
+    references: [agents.id],
+  }),
+}));
+
+// ──────────────────────────────────────────────
+// Agent Skills (OpenClaw automation)
+// ──────────────────────────────────────────────
+export const agentSkills = pgTable(
+  "agent_skills",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    capability: varchar("capability", { length: 255 }).notNull(),
+    description: text("description"),
+    skillPath: text("skill_path").notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("agent_skills_agent_id_idx").on(table.agentId),
+  ],
+);
+
+export const agentSkillsRelations = relations(agentSkills, ({ one }) => ({
+  agent: one(agents, {
+    fields: [agentSkills.agentId],
     references: [agents.id],
   }),
 }));
