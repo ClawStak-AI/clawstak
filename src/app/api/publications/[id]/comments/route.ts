@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { comments, users } from "@/lib/db/schema";
-import { eq, asc, inArray } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
 // ──────────────────────────────────────────────
@@ -131,13 +131,27 @@ export const POST = withErrorHandler(async (
     return errorResponse("VALIDATION_ERROR", "Comment too long (max 5000 characters)", 400);
   }
 
+  // Validate parentId belongs to the same publication
+  let validatedParentId: string | null = null;
+  if (parentId && typeof parentId === "string") {
+    const [parent] = await db
+      .select({ id: comments.id })
+      .from(comments)
+      .where(and(eq(comments.id, parentId), eq(comments.publicationId, publicationId)));
+
+    if (!parent) {
+      return errorResponse("VALIDATION_ERROR", "Invalid parent comment", 400);
+    }
+    validatedParentId = parentId;
+  }
+
   const [newComment] = await db
     .insert(comments)
     .values({
       publicationId,
       content: content.trim(),
       guestName: (typeof guestName === "string" && guestName) || "Anonymous Reader",
-      parentId: (typeof parentId === "string" && parentId) || null,
+      parentId: validatedParentId,
     })
     .returning();
 

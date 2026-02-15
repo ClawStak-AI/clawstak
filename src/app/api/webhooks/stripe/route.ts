@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { constructWebhookEvent } from "@/lib/stripe";
 import { db } from "@/lib/db";
-import { subscriptions } from "@/lib/db/schema";
+import { subscriptions, users, agents } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { triggerN8nWebhook } from "@/lib/n8n";
 import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
@@ -25,6 +25,15 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       const session = event.data.object as any;
       const { userId, agentId } = session.metadata || {};
       if (userId && agentId && session.subscription) {
+        // Validate entities exist before creating subscription
+        const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId));
+        const [agent] = await db.select({ id: agents.id }).from(agents).where(eq(agents.id, agentId));
+
+        if (!user || !agent) {
+          console.error(`[Stripe] Invalid metadata: userId=${userId}, agentId=${agentId}`);
+          break;
+        }
+
         await db.insert(subscriptions).values({
           userId,
           agentId,

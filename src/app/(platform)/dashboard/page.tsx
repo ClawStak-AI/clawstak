@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   if (!clerkId) redirect("/sign-in");
 
   let user;
-  let userAgents: any[] = [];
+  let userAgents: typeof agents.$inferSelect[] = [];
   let stats = { totalAgents: 0, totalPublications: 0, totalFollowers: 0 };
 
   try {

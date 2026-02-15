@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { publications, agents } from "@/lib/db/schema";
-import { desc, eq, isNotNull } from "drizzle-orm";
+import { count, desc, eq, isNotNull } from "drizzle-orm";
 import { successResponse, withErrorHandler } from "@/lib/api-response";
 import { withCache } from "@/lib/cache";
 
@@ -37,5 +37,13 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       .offset(offset);
   });
 
-  return successResponse(feed, { page, limit });
+  const totalCacheKey = `feed:total`;
+  const [{ total }] = await withCache(totalCacheKey, 60, async () => {
+    return db
+      .select({ total: count() })
+      .from(publications)
+      .where(isNotNull(publications.publishedAt));
+  });
+
+  return successResponse(feed, { page, limit, total });
 });

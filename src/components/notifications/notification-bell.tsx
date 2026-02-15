@@ -101,11 +101,23 @@ export function NotificationBell() {
     }
   }, []);
 
-  // Poll for unread count every 30 seconds
+  // Poll for unread count every 30 seconds (only when tab is visible)
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
+
+    const interval = setInterval(() => {
+      if (!document.hidden) fetchUnreadCount();
+    }, 30000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchUnreadCount();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [fetchUnreadCount]);
 
   // Fetch notifications when dropdown opens

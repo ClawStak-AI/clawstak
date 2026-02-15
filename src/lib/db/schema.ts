@@ -165,6 +165,7 @@ export const publications = pgTable(
     tags: text("tags").array(),
     viewCount: integer("view_count").default(0).notNull(),
     likeCount: integer("like_count").default(0).notNull(),
+    commentCount: integer("comment_count").default(0).notNull(),
     reviewStatus: varchar("review_status", { length: 50 }).default("approved").notNull(),
     reviewScore: decimal("review_score", { precision: 3, scale: 2 }),
     reviewNotes: text("review_notes"),
@@ -307,6 +308,7 @@ export const follows = pgTable(
   },
   (table) => [
     uniqueIndex("follows_user_agent_idx").on(table.userId, table.agentId),
+    index("follows_agent_id_idx").on(table.agentId),
   ],
 );
 
@@ -343,6 +345,7 @@ export const subscriptions = pgTable(
   (table) => [
     index("subscriptions_user_status_idx").on(table.userId, table.status),
     uniqueIndex("subscriptions_stripe_sub_id_idx").on(table.stripeSubscriptionId),
+    index("subscriptions_agent_id_idx").on(table.agentId),
   ],
 );
 
@@ -466,23 +469,31 @@ export const agentSkillsRelations = relations(agentSkills, ({ one }) => ({
 // ──────────────────────────────────────────────
 // Collaborations
 // ──────────────────────────────────────────────
-export const collaborations = pgTable("collaborations", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  requestingAgentId: uuid("requesting_agent_id")
-    .references(() => agents.id, { onDelete: "cascade" })
-    .notNull(),
-  providingAgentId: uuid("providing_agent_id")
-    .references(() => agents.id, { onDelete: "cascade" })
-    .notNull(),
-  status: varchar("status", { length: 50 }).default("proposed").notNull(),
-  taskDescription: text("task_description"),
-  negotiatedTerms: jsonb("negotiated_terms"),
-  resultPayload: jsonb("result_payload"),
-  qualityScore: decimal("quality_score", { precision: 3, scale: 2 }),
-  completedAt: timestamp("completed_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const collaborations = pgTable(
+  "collaborations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    requestingAgentId: uuid("requesting_agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    providingAgentId: uuid("providing_agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    status: varchar("status", { length: 50 }).default("proposed").notNull(),
+    taskDescription: text("task_description"),
+    negotiatedTerms: jsonb("negotiated_terms"),
+    resultPayload: jsonb("result_payload"),
+    qualityScore: decimal("quality_score", { precision: 3, scale: 2 }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("collaborations_status_idx").on(table.status),
+    index("collaborations_requesting_agent_idx").on(table.requestingAgentId),
+    index("collaborations_providing_agent_idx").on(table.providingAgentId),
+  ],
+);
 
 export const collaborationsRelations = relations(collaborations, ({ one }) => ({
   requestingAgent: one(agents, {
@@ -559,31 +570,44 @@ export const feedRecommendationsRelations = relations(feedRecommendations, ({ on
 // ──────────────────────────────────────────────
 // Platform Metrics (n8n automation)
 // ──────────────────────────────────────────────
-export const platformMetrics = pgTable("platform_metrics", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  period: varchar("period", { length: 20 }).notNull(),
-  periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
-  totalUsers: integer("total_users").default(0).notNull(),
-  totalAgents: integer("total_agents").default(0).notNull(),
-  totalPublications: integer("total_publications").default(0).notNull(),
-  dau: integer("dau").default(0).notNull(),
-  mau: integer("mau").default(0).notNull(),
-  metadata: jsonb("metadata"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const platformMetrics = pgTable(
+  "platform_metrics",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    period: varchar("period", { length: 20 }).notNull(),
+    periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+    totalUsers: integer("total_users").default(0).notNull(),
+    totalAgents: integer("total_agents").default(0).notNull(),
+    totalPublications: integer("total_publications").default(0).notNull(),
+    dau: integer("dau").default(0).notNull(),
+    mau: integer("mau").default(0).notNull(),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("platform_metrics_period_start_idx").on(table.period, table.periodStart),
+  ],
+);
 
 // ──────────────────────────────────────────────
 // Milestones (n8n automation)
 // ──────────────────────────────────────────────
-export const milestones = pgTable("milestones", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  entityType: varchar("entity_type", { length: 50 }).notNull(),
-  entityId: uuid("entity_id").notNull(),
-  milestone: varchar("milestone", { length: 255 }).notNull(),
-  value: integer("value").notNull(),
-  notifiedAt: timestamp("notified_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const milestones = pgTable(
+  "milestones",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    entityType: varchar("entity_type", { length: 50 }).notNull(),
+    entityId: uuid("entity_id").notNull(),
+    milestone: varchar("milestone", { length: 255 }).notNull(),
+    value: integer("value").notNull(),
+    notifiedAt: timestamp("notified_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("milestones_entity_idx").on(table.entityType, table.entityId),
+    index("milestones_notified_at_idx").on(table.notifiedAt),
+  ],
+);
 
 // ──────────────────────────────────────────────
 // Moderation Flags (OpenClaw automation)

@@ -75,11 +75,18 @@ export function EcosystemGraph() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [ForceGraph, setForceGraph] = useState<any>(null);
 
+  const [importError, setImportError] = useState(false);
+
   // Dynamically import ForceGraph3D on mount
   useEffect(() => {
-    import("react-force-graph-3d").then((mod) => {
-      setForceGraph(() => mod.default);
-    });
+    import("react-force-graph-3d")
+      .then((mod) => {
+        setForceGraph(() => mod.default);
+      })
+      .catch((err) => {
+        console.error("[EcosystemGraph] Failed to load 3D graph library:", err);
+        setImportError(true);
+      });
   }, []);
 
   // Fetch graph data
@@ -380,6 +387,25 @@ export function EcosystemGraph() {
       setSelectedNode(firstMatch);
     }
   }, [searchMatches, filteredData]);
+
+  // Error state
+  if (importError) {
+    return (
+      <div ref={containerRef} className="relative w-full h-full" style={{ minHeight: "100%" }}>
+        <div className="flex items-center justify-center h-full bg-[#0a0f1a]">
+          <div className="text-center space-y-3">
+            <p className="text-white/80 font-sans text-lg">Unable to load 3D visualization</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-[#6EB0E2]/20 hover:bg-[#6EB0E2]/30 text-[#6EB0E2] text-sm font-sans px-4 py-2 rounded-lg transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
   if (!ForceGraph || !filteredData || dimensions.width === 0) {

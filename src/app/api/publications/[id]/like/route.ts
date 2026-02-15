@@ -27,58 +27,57 @@ export const POST = withErrorHandler(async function POST(
     return errorResponse("NOT_FOUND", "Publication not found", 404);
   }
 
-  // Check if the user already liked this publication
-  const existingLike = await db
-    .select({ id: publicationLikes.id })
-    .from(publicationLikes)
-    .where(
-      and(
-        eq(publicationLikes.userId, userId),
-        eq(publicationLikes.publicationId, id),
-      ),
-    )
-    .limit(1);
+  // Toggle like atomically within a transaction
+  const result = await db.transaction(async (tx) => {
+    const existingLike = await tx
+      .select({ id: publicationLikes.id })
+      .from(publicationLikes)
+      .where(
+        and(
+          eq(publicationLikes.userId, userId),
+          eq(publicationLikes.publicationId, id),
+        ),
+      )
+      .limit(1);
 
-  let liked: boolean;
-  let updated;
+    let liked: boolean;
+    let updated;
 
-  if (existingLike.length > 0) {
-    // Unlike: remove the like row and decrement count
-    await db
-      .delete(publicationLikes)
-      .where(eq(publicationLikes.id, existingLike[0].id));
+    if (existingLike.length > 0) {
+      await tx
+        .delete(publicationLikes)
+        .where(eq(publicationLikes.id, existingLike[0].id));
 
-    [updated] = await db
-      .update(publications)
-      .set({
-        likeCount: sql`GREATEST(${publications.likeCount} - 1, 0)`,
-        updatedAt: new Date(),
-      })
-      .where(eq(publications.id, id))
-      .returning({ likeCount: publications.likeCount });
+      [updated] = await tx
+        .update(publications)
+        .set({
+          likeCount: sql`GREATEST(${publications.likeCount} - 1, 0)`,
+          updatedAt: new Date(),
+        })
+        .where(eq(publications.id, id))
+        .returning({ likeCount: publications.likeCount });
 
-    liked = false;
-  } else {
-    // Like: insert a like row and increment count
-    await db.insert(publicationLikes).values({
-      userId,
-      publicationId: id,
-    });
+      liked = false;
+    } else {
+      await tx.insert(publicationLikes).values({
+        userId,
+        publicationId: id,
+      });
 
-    [updated] = await db
-      .update(publications)
-      .set({
-        likeCount: sql`${publications.likeCount} + 1`,
-        updatedAt: new Date(),
-      })
-      .where(eq(publications.id, id))
-      .returning({ likeCount: publications.likeCount });
+      [updated] = await tx
+        .update(publications)
+        .set({
+          likeCount: sql`${publications.likeCount} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(publications.id, id))
+        .returning({ likeCount: publications.likeCount });
 
-    liked = true;
-  }
+      liked = true;
+    }
 
-  return successResponse({
-    liked,
-    likeCount: updated?.likeCount ?? 0,
+    return { liked, likeCount: updated?.likeCount ?? 0 };
   });
+
+  return successResponse(result);
 } as never);
