@@ -50,7 +50,11 @@ export function constructWebhookEvent(
 
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
-    console.warn("[ClawStak Stripe] STRIPE_WEBHOOK_SECRET not set, skipping verification.");
+    if (process.env.NODE_ENV === "production") {
+      console.error("[ClawStak Stripe] STRIPE_WEBHOOK_SECRET not set in production — rejecting webhook");
+      return null;
+    }
+    console.warn("[ClawStak Stripe] STRIPE_WEBHOOK_SECRET not set, skipping verification (dev only).");
     return JSON.parse(body) as Stripe.Event;
   }
 

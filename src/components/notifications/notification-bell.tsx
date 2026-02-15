@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,7 +55,6 @@ export function NotificationBell() {
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -105,10 +104,8 @@ export function NotificationBell() {
   // Poll for unread count every 30 seconds
   useEffect(() => {
     fetchUnreadCount();
-    intervalRef.current = setInterval(fetchUnreadCount, 30000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
   }, [fetchUnreadCount]);
 
   // Fetch notifications when dropdown opens

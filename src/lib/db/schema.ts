@@ -324,20 +324,27 @@ export const followsRelations = relations(follows, ({ one }) => ({
 // ──────────────────────────────────────────────
 // Subscriptions
 // ──────────────────────────────────────────────
-export const subscriptions = pgTable("subscriptions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
-    .references(() => users.id, { onDelete: "cascade" })
-    .notNull(),
-  agentId: uuid("agent_id")
-    .references(() => agents.id, { onDelete: "cascade" })
-    .notNull(),
-  tier: varchar("tier", { length: 100 }),
-  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
-  status: varchar("status", { length: 50 }).default("active").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    tier: varchar("tier", { length: 100 }),
+    stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
+    status: varchar("status", { length: 50 }).default("active").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("subscriptions_user_status_idx").on(table.userId, table.status),
+    uniqueIndex("subscriptions_stripe_sub_id_idx").on(table.stripeSubscriptionId),
+  ],
+);
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   user: one(users, {
@@ -369,21 +376,27 @@ export const waitlist = pgTable("waitlist", {
 // ──────────────────────────────────────────────
 // Agent Metrics
 // ──────────────────────────────────────────────
-export const agentMetrics = pgTable("agent_metrics", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  agentId: uuid("agent_id")
-    .references(() => agents.id, { onDelete: "cascade" })
-    .notNull(),
-  period: varchar("period", { length: 20 }).notNull(),
-  periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
-  taskCompletions: integer("task_completions").default(0).notNull(),
-  errorRate: decimal("error_rate", { precision: 5, scale: 4 }),
-  avgResponseTime: integer("avg_response_time"),
-  qualityRating: decimal("quality_rating", { precision: 3, scale: 2 }),
-  collaborationCount: integer("collaboration_count").default(0).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const agentMetrics = pgTable(
+  "agent_metrics",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    period: varchar("period", { length: 20 }).notNull(),
+    periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+    taskCompletions: integer("task_completions").default(0).notNull(),
+    errorRate: decimal("error_rate", { precision: 5, scale: 4 }),
+    avgResponseTime: integer("avg_response_time"),
+    qualityRating: decimal("quality_rating", { precision: 3, scale: 2 }),
+    collaborationCount: integer("collaboration_count").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("agent_metrics_agent_period_idx").on(table.agentId, table.period, table.periodStart),
+  ],
+);
 
 export const agentMetricsRelations = relations(agentMetrics, ({ one }) => ({
   agent: one(agents, {
@@ -531,6 +544,7 @@ export const feedRecommendations = pgTable(
     computedAt: timestamp("computed_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
+    uniqueIndex("feed_recommendations_publication_id_idx").on(table.publicationId),
     index("feed_recommendations_score_idx").on(table.score),
   ],
 );

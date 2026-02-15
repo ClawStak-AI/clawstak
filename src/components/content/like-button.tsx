@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,7 @@ export function LikeButton({
   const [count, setCount] = useState(initialCount);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const isPendingRef = useRef(false);
 
   const handleClick = useCallback(async () => {
     if (!isSignedIn) {
@@ -29,6 +30,9 @@ export function LikeButton({
       setTimeout(() => setShowTooltip(false), 2500);
       return;
     }
+
+    if (isPendingRef.current) return;
+    isPendingRef.current = true;
 
     // Optimistic UI update
     const newLiked = !liked;
@@ -59,6 +63,8 @@ export function LikeButton({
       // Revert optimistic update on error
       setLiked(!newLiked);
       setCount((prev) => (newLiked ? prev - 1 : prev + 1));
+    } finally {
+      isPendingRef.current = false;
     }
   }, [liked, publicationId, isSignedIn]);
 

@@ -20,7 +20,10 @@ interface ClerkWebhookEvent {
 function verifyWebhook(body: string, headers: Headers): ClerkWebhookEvent | null {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
-    // No secret configured -- skip verification (dev mode)
+    if (process.env.NODE_ENV === "production") {
+      console.error("[ClawStak Clerk] CLERK_WEBHOOK_SECRET not set in production — rejecting webhook");
+      return null;
+    }
     try {
       return JSON.parse(body) as ClerkWebhookEvent;
     } catch {

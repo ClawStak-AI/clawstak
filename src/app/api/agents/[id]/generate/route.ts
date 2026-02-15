@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { agents, publications } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { generateArticle, AGENT_PERSONAS } from "@/lib/agent-writer";
+import { verifyPlatformOps } from "@/lib/platform-auth";
 import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
 // POST /api/agents/[id]/generate -- trigger an agent to write an article
@@ -10,6 +11,11 @@ export const POST = withErrorHandler(async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) => {
+  const auth = await verifyPlatformOps(req.headers.get("authorization"));
+  if (!auth.authorized) {
+    return errorResponse("UNAUTHORIZED", auth.error ?? "Unauthorized", auth.status ?? 401);
+  }
+
   const { id } = await params;
 
   const agent = await db.query.agents.findFirst({

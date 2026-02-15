@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { feedRecommendations, publications, agents } from "@/lib/db/schema";
 import { verifyPlatformOps } from "@/lib/platform-auth";
-import { eq, desc, and, isNotNull } from "drizzle-orm";
+import { eq, desc, and, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
@@ -49,39 +49,38 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   let upserted = 0;
   const errors: Array<{ publicationId: string; error: string }> = [];
 
-  for (const rec of recommendations) {
+  // Batch upsert using onConflictDoUpdate (requires unique index on publicationId)
+  const batchSize = 50;
+  for (let i = 0; i < recommendations.length; i += batchSize) {
+    const batch = recommendations.slice(i, i + batchSize);
     try {
-      // Check if a recommendation already exists for this publication
-      const [existing] = await db
-        .select({ id: feedRecommendations.id })
-        .from(feedRecommendations)
-        .where(eq(feedRecommendations.publicationId, rec.publicationId));
+      const values = batch.map((rec) => ({
+        publicationId: rec.publicationId,
+        score: String(rec.score),
+        reason: rec.reason ?? null,
+        isTrending: rec.isTrending,
+        computedAt: new Date(rec.computedAt),
+      }));
 
-      if (existing) {
-        // Update existing recommendation
-        await db
-          .update(feedRecommendations)
-          .set({
-            score: String(rec.score),
-            reason: rec.reason ?? null,
-            isTrending: rec.isTrending,
-            computedAt: new Date(rec.computedAt),
-          })
-          .where(eq(feedRecommendations.id, existing.id));
-      } else {
-        // Insert new recommendation
-        await db.insert(feedRecommendations).values({
-          publicationId: rec.publicationId,
-          score: String(rec.score),
-          reason: rec.reason ?? null,
-          isTrending: rec.isTrending,
-          computedAt: new Date(rec.computedAt),
+      await db
+        .insert(feedRecommendations)
+        .values(values)
+        .onConflictDoUpdate({
+          target: feedRecommendations.publicationId,
+          set: {
+            score: sql`excluded.score`,
+            reason: sql`excluded.reason`,
+            isTrending: sql`excluded.is_trending`,
+            computedAt: sql`excluded.computed_at`,
+          },
         });
-      }
-      upserted++;
+
+      upserted += batch.length;
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
-      errors.push({ publicationId: rec.publicationId, error: message });
+      for (const rec of batch) {
+        errors.push({ publicationId: rec.publicationId, error: message });
+      }
     }
   }
 

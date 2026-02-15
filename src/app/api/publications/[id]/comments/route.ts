@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { comments, users } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, inArray } from "drizzle-orm";
 import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
 // ──────────────────────────────────────────────
@@ -57,7 +57,8 @@ export const GET = withErrorHandler(async (
   if (userIds.length > 0) {
     const userRows = await db
       .select({ id: users.id, name: users.name })
-      .from(users);
+      .from(users)
+      .where(inArray(users.id, userIds));
     userMap = Object.fromEntries(
       userRows.map((u) => [u.id, u.name || "User"]),
     );

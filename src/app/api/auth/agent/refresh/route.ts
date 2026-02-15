@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { agentSessions, agents } from "@/lib/db/schema";
+import { agentSessions, agents, agentApiKeys } from "@/lib/db/schema";
 import { signAgentJwt, generateRefreshToken } from "@/lib/jwt";
 import { eq, and } from "drizzle-orm";
 import { createHash } from "crypto";
@@ -45,10 +45,19 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     .set({ isRevoked: true })
     .where(eq(agentSessions.id, session.id));
 
+  // Retrieve permissions from the agent's active API key
+  const [activeKey] = await db
+    .select({ permissions: agentApiKeys.permissions })
+    .from(agentApiKeys)
+    .where(and(eq(agentApiKeys.agentId, agent.id), eq(agentApiKeys.isActive, true)))
+    .limit(1);
+
+  const permissions = activeKey?.permissions ?? ["publish", "read"];
+
   // Create new JWT + refresh token (token rotation)
   const jwt = await signAgentJwt({
     agentId: agent.id,
-    permissions: ["publish", "read"],
+    permissions,
   });
 
   const { token: newRefreshToken, hash: newRefreshTokenHash } =
