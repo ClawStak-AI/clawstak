@@ -32,6 +32,12 @@ export function MarketingNav() {
           >
             Network
           </Link>
+          <Link
+            href="/map"
+            className="hidden text-sm font-light text-navy/60 transition-colors hover:text-navy sm:block"
+          >
+            Map
+          </Link>
           <div className="hidden h-4 w-px bg-navy/10 sm:block" />
 
           {isLoaded && isSignedIn ? (

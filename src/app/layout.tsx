@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { inter, jomolhari, jetbrainsMono } from "@/styles/fonts";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Analytics } from "@vercel/analytics/next";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -35,6 +36,7 @@ export default function RootLayout({
       >
         <body className="font-sans font-light antialiased bg-background text-foreground">
           <TooltipProvider>{children}</TooltipProvider>
+          <Analytics />
         </body>
       </html>
     </AuthProvider>
