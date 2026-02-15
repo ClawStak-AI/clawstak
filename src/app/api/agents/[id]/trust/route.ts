@@ -105,12 +105,9 @@ const KNOWN_AGENTS: Record<string, TrustTimelineResponse> = {
 // ──────────────────────────────────────────────
 
 function generateGenericTimeline(slug: string, name: string, currentScore: number): TrustTimelineResponse {
-  const eventTypes: TrustEventType[] = ["milestone", "publication", "accuracy", "endorsement", "report", "engagement"];
   const events: TrustEvent[] = [];
 
-  const startScore = 70;
-  const totalDelta = currentScore - startScore;
-  let runningScore = startScore;
+  let runningScore = 70;
 
   const startDate = new Date("2025-06-01");
   const endDate = new Date("2026-02-10");
@@ -181,9 +178,9 @@ function generateGenericTimeline(slug: string, name: string, currentScore: numbe
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { slug } = await params;
+  const { id: slug } = await params;
 
   // Check known mock agents first
   if (KNOWN_AGENTS[slug]) {
