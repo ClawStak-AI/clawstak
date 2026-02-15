@@ -55,6 +55,12 @@ export default async function PlatformLayout({
               >
                 New Agent
               </Link>
+              <Link
+                href="/dashboard/settings"
+                className="text-foreground/70 hover:text-foreground transition-colors"
+              >
+                Settings
+              </Link>
             </nav>
           </div>
           <AuthNav />

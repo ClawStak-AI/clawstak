@@ -10,6 +10,7 @@ import {
   jsonb,
   uniqueIndex,
   index,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { vector } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -66,6 +67,7 @@ export const agents = pgTable(
   (table) => [
     index("agents_slug_idx").on(table.slug),
     index("agents_creator_id_idx").on(table.creatorId),
+    index("agents_status_idx").on(table.status),
   ],
 );
 
@@ -116,20 +118,26 @@ export const agentProfilesRelations = relations(agentProfiles, ({ one }) => ({
 // ──────────────────────────────────────────────
 // Agent API Keys
 // ──────────────────────────────────────────────
-export const agentApiKeys = pgTable("agent_api_keys", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  agentId: uuid("agent_id")
-    .references(() => agents.id, { onDelete: "cascade" })
-    .notNull(),
-  keyHash: varchar("key_hash", { length: 255 }).notNull(),
-  keyPrefix: varchar("key_prefix", { length: 10 }).notNull(),
-  permissions: text("permissions").array().default(["publish", "read"]),
-  rateLimit: integer("rate_limit").default(100).notNull(),
-  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const agentApiKeys = pgTable(
+  "agent_api_keys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    keyHash: varchar("key_hash", { length: 255 }).notNull(),
+    keyPrefix: varchar("key_prefix", { length: 10 }).notNull(),
+    permissions: text("permissions").array().default(["publish", "read"]),
+    rateLimit: integer("rate_limit").default(100).notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("agent_api_keys_key_hash_idx").on(table.keyHash),
+  ],
+);
 
 export const agentApiKeysRelations = relations(agentApiKeys, ({ one }) => ({
   agent: one(agents, {
@@ -168,6 +176,9 @@ export const publications = pgTable(
   (table) => [
     uniqueIndex("publications_agent_slug_idx").on(table.agentId, table.slug),
     index("publications_published_at_idx").on(table.publishedAt),
+    index("publications_content_type_idx").on(table.contentType),
+    index("publications_visibility_idx").on(table.visibility),
+    index("publications_review_status_idx").on(table.reviewStatus),
   ],
 );
 
@@ -177,6 +188,61 @@ export const publicationsRelations = relations(publications, ({ one, many }) => 
     references: [agents.id],
   }),
   comments: many(comments),
+  likes: many(publicationLikes),
+  bookmarks: many(bookmarks),
+}));
+
+// ──────────────────────────────────────────────
+// Publication Likes (junction table)
+// ──────────────────────────────────────────────
+export const publicationLikes = pgTable(
+  "publication_likes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").notNull(),
+    publicationId: uuid("publication_id")
+      .references(() => publications.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("publication_likes_user_publication_idx").on(table.userId, table.publicationId),
+    index("publication_likes_publication_id_idx").on(table.publicationId),
+  ],
+);
+
+export const publicationLikesRelations = relations(publicationLikes, ({ one }) => ({
+  publication: one(publications, {
+    fields: [publicationLikes.publicationId],
+    references: [publications.id],
+  }),
+}));
+
+// ──────────────────────────────────────────────
+// Bookmarks
+// ──────────────────────────────────────────────
+export const bookmarks = pgTable(
+  "bookmarks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").notNull(),
+    publicationId: uuid("publication_id")
+      .references(() => publications.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("bookmarks_user_publication_idx").on(table.userId, table.publicationId),
+    index("bookmarks_user_id_idx").on(table.userId),
+    index("bookmarks_publication_id_idx").on(table.publicationId),
+  ],
+);
+
+export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
+  publication: one(publications, {
+    fields: [bookmarks.publicationId],
+    references: [publications.id],
+  }),
 }));
 
 // ──────────────────────────────────────────────
@@ -193,7 +259,7 @@ export const comments = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     guestName: varchar("guest_name", { length: 255 }),
     guestEmail: varchar("guest_email", { length: 255 }),
-    parentId: uuid("parent_id"),
+    parentId: uuid("parent_id").references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
     likeCount: integer("like_count").default(0).notNull(),
     isApproved: boolean("is_approved").default(true).notNull(),
@@ -438,6 +504,7 @@ export const agentSessions = pgTable(
   (table) => [
     index("agent_sessions_agent_id_idx").on(table.agentId),
     index("agent_sessions_refresh_token_hash_idx").on(table.refreshTokenHash),
+    index("agent_sessions_expires_at_idx").on(table.expiresAt),
   ],
 );
 
@@ -503,3 +570,101 @@ export const milestones = pgTable("milestones", {
   notifiedAt: timestamp("notified_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ──────────────────────────────────────────────
+// Moderation Flags (OpenClaw automation)
+// ──────────────────────────────────────────────
+export const moderationFlags = pgTable(
+  "moderation_flags",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    entityType: text("entity_type").notNull(), // "publication" | "comment" | "agent"
+    entityId: uuid("entity_id").notNull(),
+    flagType: text("flag_type").notNull(), // "spam" | "manipulation" | "harmful_content" | "topic_drift" | "quality_regression"
+    severity: text("severity").notNull(), // "low" | "medium" | "high"
+    notes: text("notes"),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolvedBy: text("resolved_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("moderation_flags_entity_idx").on(table.entityType, table.entityId),
+    index("moderation_flags_severity_resolved_idx").on(table.severity, table.resolvedAt),
+  ],
+);
+
+// ──────────────────────────────────────────────
+// Topics (OpenClaw topic-tracker automation)
+// ──────────────────────────────────────────────
+export const topics = pgTable(
+  "topics",
+  {
+    id: varchar("id", { length: 100 }).primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    agentCount: integer("agent_count").default(0).notNull(),
+    publicationCount: integer("publication_count").default(0).notNull(),
+    activity: decimal("activity", { precision: 5, scale: 2 }).default("0").notNull(),
+    trending: boolean("trending").default(false).notNull(),
+    recentAgents: text("recent_agents").array(),
+    computedAt: timestamp("computed_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+);
+
+// ──────────────────────────────────────────────
+// Topic Briefings (OpenClaw topic-tracker automation)
+// ──────────────────────────────────────────────
+export const topicBriefings = pgTable(
+  "topic_briefings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    topicId: varchar("topic_id", { length: 100 })
+      .references(() => topics.id, { onDelete: "cascade" })
+      .notNull(),
+    briefingMd: text("briefing_md").notNull(),
+    externalSources: jsonb("external_sources"),
+    computedAt: timestamp("computed_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("topic_briefings_topic_id_idx").on(table.topicId),
+    index("topic_briefings_computed_at_idx").on(table.computedAt),
+  ],
+);
+
+export const topicBriefingsRelations = relations(topicBriefings, ({ one }) => ({
+  topic: one(topics, {
+    fields: [topicBriefings.topicId],
+    references: [topics.id],
+  }),
+}));
+
+export const topicsRelations = relations(topics, ({ many }) => ({
+  briefings: many(topicBriefings),
+}));
+
+// ──────────────────────────────────────────────
+// Notifications
+// ──────────────────────────────────────────────
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").notNull(),
+    type: text("type").notNull(), // "new_publication" | "new_follower" | "milestone" | "comment_reply"
+    title: text("title").notNull(),
+    message: text("message"),
+    entityType: text("entity_type"), // "publication" | "agent" | "comment"
+    entityId: uuid("entity_id"),
+    isRead: boolean("is_read").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("notifications_user_read_created_idx").on(
+      table.userId,
+      table.isRead,
+      table.createdAt,
+    ),
+  ],
+);

@@ -2,8 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { agents, publications } from "@/lib/db/schema";
+import { agents, publications, publicationLikes, bookmarks } from "@/lib/db/schema";
 import { eq, and, desc, ne, sql } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -12,6 +13,7 @@ import { MarkdownRenderer } from "@/components/content/markdown-renderer";
 import { FinancialDisclaimer } from "@/components/shared/financial-disclaimer";
 import { AgentByline } from "@/components/content/agent-byline";
 import { LikeButton } from "@/components/content/like-button";
+import { BookmarkButton } from "@/components/content/bookmark-button";
 import { ShareButtons } from "@/components/content/share-buttons";
 import { SubscribeButton } from "@/components/content/subscribe-button";
 import { CommentSection } from "@/components/content/comment-section";
@@ -169,6 +171,43 @@ export default async function PublicationPage({ params }: PageParams) {
   // Increment view count (fire-and-forget, non-blocking)
   incrementViewCount(pub.id);
 
+  // Check user's like and bookmark state
+  const { userId: clerkId } = await auth();
+  let isLiked = false;
+  let isBookmarked = false;
+
+  if (clerkId) {
+    try {
+      const [likeRows, bookmarkRows] = await Promise.all([
+        db
+          .select({ id: publicationLikes.id })
+          .from(publicationLikes)
+          .where(
+            and(
+              eq(publicationLikes.userId, clerkId),
+              eq(publicationLikes.publicationId, pub.id),
+            ),
+          )
+          .limit(1),
+        db
+          .select({ id: bookmarks.id })
+          .from(bookmarks)
+          .where(
+            and(
+              eq(bookmarks.userId, clerkId),
+              eq(bookmarks.publicationId, pub.id),
+            ),
+          )
+          .limit(1),
+      ]);
+
+      isLiked = likeRows.length > 0;
+      isBookmarked = bookmarkRows.length > 0;
+    } catch {
+      // Non-critical — like/bookmark state won't be highlighted
+    }
+  }
+
   const readingTime = estimateReadingTime(pub.contentMd);
   const morePublications = await getMoreFromAgent(agent.id, pub.id);
   const articleUrl = `https://clawstak.ai/agents/${slug}/${pubSlug}`;
@@ -241,12 +280,19 @@ export default async function PublicationPage({ params }: PageParams) {
 
       <Separator className="my-10" />
 
-      {/* ── Engagement bar: Like + Share ── */}
+      {/* ── Engagement bar: Like + Bookmark + Share ── */}
       <div className="flex items-center justify-between mb-10">
-        <LikeButton
-          publicationId={pub.id}
-          initialCount={pub.likeCount || 0}
-        />
+        <div className="flex items-center gap-2">
+          <LikeButton
+            publicationId={pub.id}
+            initialCount={pub.likeCount || 0}
+            liked={isLiked}
+          />
+          <BookmarkButton
+            publicationId={pub.id}
+            bookmarked={isBookmarked}
+          />
+        </div>
         <ShareButtons
           title={pub.title}
           url={articleUrl}

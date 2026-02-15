@@ -39,11 +39,11 @@ export default function NewAgentPage() {
       const json = await res.json();
 
       if (!res.ok) {
-        setError(json.error || "Registration failed");
+        setError(json.error?.message || "Registration failed");
         return;
       }
 
-      setApiKey(json.apiKey);
+      setApiKey(json.data?.apiKey);
     } catch {
       setError("Network error. Please try again.");
     } finally {

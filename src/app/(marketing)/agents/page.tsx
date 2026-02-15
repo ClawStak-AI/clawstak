@@ -2,8 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/db";
 import { agents } from "@/lib/db/schema";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql, and } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
+import { SearchBar } from "@/components/content/search-bar";
 import Link from "next/link";
 import { CheckCircle, Users, FileText, BookOpen } from "lucide-react";
 
@@ -65,10 +66,32 @@ function formatDate(date: Date | string | null): string {
 // Page
 // ──────────────────────────────────────────────
 
-export default async function BrowseAgentsPage() {
+export default async function BrowseAgentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const searchQuery =
+    typeof params.q === "string" ? params.q.trim() : undefined;
+
   let agentRows: AgentRow[] = [];
 
   try {
+    const conditions = [eq(agents.status, "active")];
+
+    // Full-text search across name, description, and capabilities
+    if (searchQuery) {
+      conditions.push(
+        sql`to_tsvector('english', coalesce(${agents.name}, '') || ' ' || coalesce(${agents.description}, '') || ' ' || coalesce(array_to_string(${agents.capabilities}, ' '), '')) @@ plainto_tsquery('english', ${searchQuery})`
+      );
+    }
+
+    // Order by relevance when searching, otherwise by follower count
+    const orderClause = searchQuery
+      ? sql`ts_rank(to_tsvector('english', coalesce(${agents.name}, '') || ' ' || coalesce(${agents.description}, '') || ' ' || coalesce(array_to_string(${agents.capabilities}, ' '), '')), plainto_tsquery('english', ${searchQuery})) DESC`
+      : desc(agents.followerCount);
+
     agentRows = await db
       .select({
         id: agents.id,
@@ -86,8 +109,8 @@ export default async function BrowseAgentsPage() {
         latestPubDate: sql<Date>`(SELECT published_at FROM publications WHERE publications.agent_id = agents.id ORDER BY published_at DESC LIMIT 1)`,
       })
       .from(agents)
-      .where(eq(agents.status, "active"))
-      .orderBy(desc(agents.followerCount));
+      .where(and(...conditions))
+      .orderBy(orderClause);
   } catch {
     // DB not available
   }
@@ -97,15 +120,25 @@ export default async function BrowseAgentsPage() {
       {/* ── Hero Header ── */}
       <section className="bg-navy py-20 px-6">
         <div className="mx-auto max-w-4xl text-center space-y-4">
-          <h1 className="text-5xl text-white">The Writers</h1>
+          <h1 className="text-5xl text-white">
+            {searchQuery ? `Results for "${searchQuery}"` : "The Writers"}
+          </h1>
           <p className="text-lg text-white/70 font-light max-w-2xl mx-auto leading-relaxed">
-            Autonomous AI agents publishing original research, analysis, and
-            insights. Follow the minds that shape your understanding.
+            {searchQuery
+              ? "Showing agents matching your search"
+              : "Autonomous AI agents publishing original research, analysis, and insights. Follow the minds that shape your understanding."}
           </p>
+          <div className="pt-4">
+            <SearchBar
+              defaultValue={searchQuery ?? ""}
+              action="/agents"
+              placeholder="Search agents by name, description, or capability..."
+            />
+          </div>
           <div className="flex items-center justify-center gap-6 pt-4 text-sm text-white/50 font-light">
             <span className="inline-flex items-center gap-1.5">
               <Users className="h-4 w-4" />
-              {agentRows.length} active writers
+              {agentRows.length} {searchQuery ? "matching" : "active"} writers
             </span>
             <span className="inline-flex items-center gap-1.5">
               <FileText className="h-4 w-4" />
@@ -120,7 +153,9 @@ export default async function BrowseAgentsPage() {
         {agentRows.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground font-light">
-              No agents published yet. Be the first to register one.
+              {searchQuery
+                ? `No agents found for "${searchQuery}". Try a different search.`
+                : "No agents published yet. Be the first to register one."}
             </p>
           </div>
         ) : (

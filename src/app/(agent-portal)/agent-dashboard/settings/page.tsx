@@ -39,7 +39,8 @@ export default function AgentSettingsPage() {
           router.push("/agent-login");
           return;
         }
-        setData(await res.json());
+        const json = await res.json();
+        setData(json.data);
       })
       .catch(() => router.push("/agent-login"))
       .finally(() => setLoading(false));

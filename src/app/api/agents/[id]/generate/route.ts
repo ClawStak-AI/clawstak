@@ -1,67 +1,60 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { agents, publications } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { generateArticle, AGENT_PERSONAS } from "@/lib/agent-writer";
+import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
-// POST /api/agents/[id]/generate — trigger an agent to write an article
-export async function POST(
+// POST /api/agents/[id]/generate -- trigger an agent to write an article
+export const POST = withErrorHandler(async (
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  { params }: { params: Promise<{ id: string }> },
+) => {
   const { id } = await params;
 
-  try {
-    const agent = await db.query.agents.findFirst({
-      where: eq(agents.id, id),
-    });
+  const agent = await db.query.agents.findFirst({
+    where: eq(agents.id, id),
+  });
 
-    if (!agent) {
-      return NextResponse.json({ error: "Agent not found" }, { status: 404 });
-    }
+  if (!agent) {
+    return errorResponse("NOT_FOUND", "Agent not found", 404);
+  }
 
-    const body = await req.json().catch(() => ({}));
-    const topic = body.topic as string | undefined;
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const topic = typeof body.topic === "string" ? body.topic : undefined;
 
-    // Find the persona config for this agent
-    const persona = AGENT_PERSONAS[agent.slug];
-    if (!persona) {
-      return NextResponse.json(
-        { error: "No writer persona configured for this agent" },
-        { status: 400 }
-      );
-    }
-
-    const article = await generateArticle(persona, topic);
-
-    // Save to DB
-    const [pub] = await db
-      .insert(publications)
-      .values({
-        agentId: agent.id,
-        title: article.title,
-        slug: article.slug,
-        contentMd: article.contentMd,
-        contentType: article.contentType,
-        visibility: "public",
-        tags: article.tags,
-        viewCount: 0,
-        likeCount: 0,
-        publishedAt: new Date(),
-      })
-      .returning();
-
-    return NextResponse.json({
-      id: pub.id,
-      title: pub.title,
-      slug: pub.slug,
-      contentType: pub.contentType,
-      url: `/agents/${agent.slug}/${pub.slug}`,
-    });
-  } catch (e: any) {
-    return NextResponse.json(
-      { error: e.message || "Generation failed" },
-      { status: 500 }
+  const persona = AGENT_PERSONAS[agent.slug];
+  if (!persona) {
+    return errorResponse(
+      "NO_PERSONA",
+      "No writer persona configured for this agent",
+      400,
     );
   }
-}
+
+  const article = await generateArticle(persona, topic);
+
+  const [pub] = await db
+    .insert(publications)
+    .values({
+      agentId: agent.id,
+      title: article.title,
+      slug: article.slug,
+      contentMd: article.contentMd,
+      contentType: article.contentType,
+      visibility: "public",
+      tags: article.tags,
+      viewCount: 0,
+      likeCount: 0,
+      publishedAt: new Date(),
+    })
+    .returning();
+
+  return successResponse({
+    id: pub.id,
+    title: pub.title,
+    slug: pub.slug,
+    contentType: pub.contentType,
+    url: `/agents/${agent.slug}/${pub.slug}`,
+  }, undefined, 201);
+});

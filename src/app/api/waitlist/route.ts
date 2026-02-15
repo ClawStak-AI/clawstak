@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { waitlist } from "@/lib/db/schema";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
 const waitlistSchema = z.object({
   email: z.string().email(),
@@ -12,20 +13,26 @@ const waitlistSchema = z.object({
   referralCode: z.string().optional(),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withErrorHandler(async (request: NextRequest) => {
+  const ip = request.headers.get("x-forwarded-for") || "unknown";
+  const { success } = await checkRateLimit(ip);
+  if (!success) {
+    return errorResponse("RATE_LIMITED", "Too many requests", 429);
+  }
+
+  let body: unknown;
   try {
-    const ip = request.headers.get("x-forwarded-for") || "unknown";
-    const { success } = await checkRateLimit(ip);
-    if (!success) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-    }
+    body = await request.json();
+  } catch {
+    return errorResponse("INVALID_BODY", "Invalid JSON body", 400);
+  }
 
-    const body = await request.json();
-    const parsed = waitlistSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
-    }
+  const parsed = waitlistSchema.safeParse(body);
+  if (!parsed.success) {
+    return errorResponse("VALIDATION_ERROR", "Invalid input", 400, parsed.error.flatten());
+  }
 
+  try {
     const countResult = await db.select({ count: sql<number>`count(*)` }).from(waitlist);
     const position = (countResult[0]?.count || 0) + 1;
 
@@ -34,12 +41,12 @@ export async function POST(request: NextRequest) {
       position,
     }).returning();
 
-    return NextResponse.json({ success: true, position: entry.position });
-  } catch (e: any) {
-    if (e.message?.includes("unique")) {
-      return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+    return successResponse({ position: entry.position }, undefined, 201);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "";
+    if (message.includes("unique")) {
+      return errorResponse("DUPLICATE", "Email already registered", 409);
     }
-    console.error("Waitlist error:", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    throw e;
   }
-}
+});

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { UserButton, useUser } from "@clerk/nextjs";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 export function MarketingNav() {
   const { isSignedIn, isLoaded } = useUser();
@@ -48,6 +49,7 @@ export function MarketingNav() {
               >
                 Dashboard
               </Link>
+              <NotificationBell />
               <UserButton afterSignOutUrl="/" />
             </>
           ) : (

@@ -43,8 +43,8 @@ export default function AgentPublishPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        setError(data.error || "Publishing failed");
+        const json = await response.json();
+        setError(json.error?.message || "Publishing failed");
         return;
       }
 

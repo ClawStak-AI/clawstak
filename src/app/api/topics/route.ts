@@ -1,227 +1,221 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { db } from "@/lib/db";
+import { topics, agents, publications } from "@/lib/db/schema";
+import { sql, isNotNull, desc } from "drizzle-orm";
+import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
+import { withCache, cacheInvalidate } from "@/lib/cache";
+import { verifyPlatformOps } from "@/lib/platform-auth";
+import { z } from "zod";
 
 // ──────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────
 
-interface Topic {
+interface TopicResult {
   id: string;
   name: string;
-  icon: string;
   agentCount: number;
   publicationCount: number;
-  activity: number;
+  activity: string;
   trending: boolean;
-  recentAgents: string[];
-  color: string;
-  recentPublications: string[];
-}
-
-interface TopicsResponse {
-  topics: Topic[];
+  recentAgents: string[] | null;
 }
 
 // ──────────────────────────────────────────────
-// Mock data
+// Capability-to-topic mapping (fallback for
+// computing topics from DB when no stored data)
 // ──────────────────────────────────────────────
 
-const TOPICS: Topic[] = [
-  {
-    id: "finance",
-    name: "Finance & Markets",
-    icon: "\u{1F4C8}",
-    agentCount: 10,
-    publicationCount: 145,
-    activity: 0.95,
-    trending: true,
-    recentAgents: ["Portfolio Sentinel", "Quant Strategy Lab"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "Q4 Earnings Season: Key Takeaways",
-      "Yield Curve Inversion Deep Dive",
-      "Market Microstructure Shifts in 2026",
-    ],
-  },
-  {
-    id: "risk",
-    name: "Risk Management",
-    icon: "\u{1F6E1}\uFE0F",
-    agentCount: 5,
-    publicationCount: 67,
-    activity: 0.72,
-    trending: false,
-    recentAgents: ["Portfolio Sentinel", "Options Flow Scanner"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "VaR Models Under Stress",
-      "Tail Risk Hedging Playbook",
-      "Correlation Breakdown Alerts",
-    ],
-  },
-  {
-    id: "compliance",
-    name: "Regulatory & Compliance",
-    icon: "\u{2696}\uFE0F",
-    agentCount: 4,
-    publicationCount: 52,
-    activity: 0.58,
-    trending: false,
-    recentAgents: ["Regulatory Radar", "SEC Filing Analyzer"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "SEC Climate Disclosure Rules Update",
-      "MiCA Compliance Checklist",
-      "Basel III Endgame Impact",
-    ],
-  },
-  {
-    id: "ai-ml",
-    name: "AI & Machine Learning",
-    icon: "\u{1F916}",
-    agentCount: 6,
-    publicationCount: 98,
-    activity: 0.88,
-    trending: true,
-    recentAgents: ["Model Benchmark Agent", "AI Infrastructure Monitor"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "Opus 4.6 Benchmark Analysis",
-      "Inference Cost Optimization Guide",
-      "Multi-Agent Orchestration Patterns",
-    ],
-  },
-  {
-    id: "data-analytics",
-    name: "Data & Analytics",
-    icon: "\u{1F4CA}",
-    agentCount: 5,
-    publicationCount: 73,
-    activity: 0.65,
-    trending: false,
-    recentAgents: ["Data Pipeline Architect", "Geospatial Analyst"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "Real-Time Streaming Architecture Patterns",
-      "Data Quality Scoring Framework",
-      "Geospatial Supply Chain Intelligence",
-    ],
-  },
-  {
-    id: "crypto-defi",
-    name: "Crypto & DeFi",
-    icon: "\u{1F517}",
-    agentCount: 4,
-    publicationCount: 56,
-    activity: 0.82,
-    trending: true,
-    recentAgents: ["DeFi Protocol Auditor", "On-Chain Intelligence"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "Cross-Chain Bridge Security Audit",
-      "MEV Extraction Trends Q1 2026",
-      "Stablecoin Reserve Transparency Report",
-    ],
-  },
-  {
-    id: "science",
-    name: "Science & Research",
-    icon: "\u{1F52C}",
-    agentCount: 3,
-    publicationCount: 61,
-    activity: 0.48,
-    trending: false,
-    recentAgents: ["Research Paper Synthesizer", "Clinical Trial Monitor"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "CRISPR Gene Therapy Trials Update",
-      "Fusion Energy Progress Tracker",
-      "Neuroscience Publication Trends",
-    ],
-  },
-  {
-    id: "security",
-    name: "Security & Infrastructure",
-    icon: "\u{1F512}",
-    agentCount: 3,
-    publicationCount: 29,
-    activity: 0.35,
-    trending: false,
-    recentAgents: ["Code Security Scanner", "API Health Monitor"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "Zero-Day Vulnerability Roundup",
-      "API Security Best Practices",
-      "Infrastructure Incident Post-Mortem",
-    ],
-  },
-  {
-    id: "macro",
-    name: "Macroeconomics",
-    icon: "\u{1F30D}",
-    agentCount: 3,
-    publicationCount: 42,
-    activity: 0.78,
-    trending: true,
-    recentAgents: ["Macro Economics Oracle", "Fixed Income Analyst"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "Central Bank Policy Divergence 2026",
-      "Inflation Trajectory Models",
-      "Emerging Market Debt Outlook",
-    ],
-  },
-  {
-    id: "quant",
-    name: "Quantitative Trading",
-    icon: "\u{1F9EE}",
-    agentCount: 4,
-    publicationCount: 38,
-    activity: 0.91,
-    trending: true,
-    recentAgents: ["Quant Strategy Lab", "Alpha Signal Aggregator"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "Statistical Arbitrage in Low-Vol Regimes",
-      "Multi-Factor Model Performance Review",
-      "Latency Optimization Techniques",
-    ],
-  },
-  {
-    id: "esg",
-    name: "ESG & Sustainability",
-    icon: "\u{1F331}",
-    agentCount: 2,
-    publicationCount: 18,
-    activity: 0.22,
-    trending: false,
-    recentAgents: ["ESG Compliance Tracker"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "Corporate Carbon Footprint Rankings",
-      "ESG Scoring Methodology Comparison",
-    ],
-  },
-  {
-    id: "healthcare",
-    name: "Healthcare & Biotech",
-    icon: "\u{1FA7A}",
-    agentCount: 3,
-    publicationCount: 34,
-    activity: 0.15,
-    trending: false,
-    recentAgents: ["Clinical Trial Monitor", "Patent Intelligence"],
-    color: "#6EB0E2",
-    recentPublications: [
-      "FDA Fast-Track Designations Q1",
-      "Biotech IPO Pipeline Analysis",
-    ],
-  },
+const TOPIC_MAP: ReadonlyArray<{ id: string; name: string; keywords: readonly string[] }> = [
+  { id: "finance", name: "Finance & Markets", keywords: ["portfolio", "market", "earnings", "quant", "trading", "financial", "equity", "stock", "bond", "yield", "valuation", "ipo"] },
+  { id: "risk", name: "Risk Management", keywords: ["risk", "drawdown", "volatility", "hedging", "var", "correlation"] },
+  { id: "compliance", name: "Regulatory & Compliance", keywords: ["sec", "regulatory", "compliance", "filing", "legal", "aml", "kyc", "esg"] },
+  { id: "ai-ml", name: "AI & Machine Learning", keywords: ["ai", "ml", "model", "neural", "nlp", "llm", "benchmark", "inference", "gpu"] },
+  { id: "data-analytics", name: "Data & Analytics", keywords: ["data", "analytics", "sentiment", "signal", "pipeline", "etl", "geospatial"] },
+  { id: "crypto-defi", name: "Crypto & DeFi", keywords: ["defi", "crypto", "blockchain", "protocol", "smart contract", "token", "mev", "yield farm"] },
+  { id: "science", name: "Science & Research", keywords: ["research", "paper", "clinical", "trial", "patent", "academic", "journal"] },
+  { id: "security", name: "Security & Infrastructure", keywords: ["security", "vulnerability", "sast", "dast", "api monitor", "incident", "uptime"] },
 ];
 
+function classifyCapabilities(capabilities: string[]): Set<string> {
+  const matched = new Set<string>();
+  for (const cap of capabilities) {
+    const lower = cap.toLowerCase();
+    for (const topic of TOPIC_MAP) {
+      if (topic.keywords.some((kw) => lower.includes(kw))) {
+        matched.add(topic.id);
+      }
+    }
+  }
+  return matched;
+}
+
 // ──────────────────────────────────────────────
-// GET handler
+// Compute topics from DB (fallback when no
+// stored topic data exists)
 // ──────────────────────────────────────────────
 
-export async function GET(): Promise<NextResponse<TopicsResponse>> {
-  return NextResponse.json({ topics: TOPICS });
+async function computeTopicsFromDb(): Promise<TopicResult[]> {
+  const agentRows = await db
+    .select({
+      name: agents.name,
+      capabilities: agents.capabilities,
+    })
+    .from(agents)
+    .where(sql`${agents.status} = 'active'`);
+
+  const pubRows = await db
+    .select({
+      tags: publications.tags,
+    })
+    .from(publications)
+    .where(isNotNull(publications.publishedAt));
+
+  const topicAgents = new Map<string, Set<string>>();
+  const topicPubCount = new Map<string, number>();
+
+  for (const t of TOPIC_MAP) {
+    topicAgents.set(t.id, new Set());
+    topicPubCount.set(t.id, 0);
+  }
+
+  for (const agent of agentRows) {
+    const caps = agent.capabilities ?? [];
+    const matched = classifyCapabilities(caps);
+    for (const topicId of matched) {
+      topicAgents.get(topicId)?.add(agent.name);
+    }
+  }
+
+  for (const pub of pubRows) {
+    const tags = pub.tags ?? [];
+    const matched = classifyCapabilities(tags);
+    for (const topicId of matched) {
+      topicPubCount.set(topicId, (topicPubCount.get(topicId) ?? 0) + 1);
+    }
+  }
+
+  return TOPIC_MAP.map((t) => {
+    const agentNames = topicAgents.get(t.id) ?? new Set();
+    const agentCount = agentNames.size;
+    const publicationCount = topicPubCount.get(t.id) ?? 0;
+    return {
+      id: t.id,
+      name: t.name,
+      agentCount,
+      publicationCount,
+      activity: String(agentCount + publicationCount),
+      trending: false,
+      recentAgents: Array.from(agentNames).slice(0, 5),
+    };
+  }).filter((t) => t.agentCount > 0 || t.publicationCount > 0);
 }
+
+// ──────────────────────────────────────────────
+// GET /api/topics (public)
+// Reads stored topic data from DB, falls back
+// to live computation if no stored data exists
+// ──────────────────────────────────────────────
+
+export const GET = withErrorHandler(async () => {
+  const result = await withCache<TopicResult[]>("topics:all", 300, async () => {
+    // Try reading from the topics table first
+    const stored = await db
+      .select()
+      .from(topics)
+      .orderBy(desc(topics.activity));
+
+    if (stored.length > 0) {
+      return stored.map((t) => ({
+        id: t.id,
+        name: t.name,
+        agentCount: t.agentCount,
+        publicationCount: t.publicationCount,
+        activity: t.activity,
+        trending: t.trending,
+        recentAgents: t.recentAgents,
+      }));
+    }
+
+    // Fallback: compute from agents + publications
+    return computeTopicsFromDb();
+  });
+
+  return successResponse({ topics: result });
+});
+
+// ──────────────────────────────────────────────
+// PUT /api/topics (platform-ops auth)
+// Accepts computed topic data from the
+// topic-tracker skill and upserts into DB
+// ──────────────────────────────────────────────
+
+const topicSchema = z.object({
+  id: z.string().min(1).max(100),
+  name: z.string().min(1).max(255),
+  agentCount: z.number().int().min(0),
+  publicationCount: z.number().int().min(0),
+  activity: z.number().min(0),
+  trending: z.boolean(),
+  recentAgents: z.array(z.string()).max(10),
+});
+
+const putBodySchema = z.object({
+  topics: z.array(topicSchema).min(1).max(50),
+});
+
+export const PUT = withErrorHandler(async (req: NextRequest) => {
+  const auth = await verifyPlatformOps(req.headers.get("Authorization"));
+  if (!auth.authorized) {
+    return errorResponse("UNAUTHORIZED", auth.error ?? "Unauthorized", auth.status ?? 401);
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return errorResponse("INVALID_BODY", "Invalid JSON body", 400);
+  }
+
+  const parsed = putBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return errorResponse("VALIDATION_ERROR", "Invalid topic data", 400, parsed.error.issues);
+  }
+
+  const now = new Date();
+
+  // Upsert each topic using raw SQL for ON CONFLICT
+  for (const t of parsed.data.topics) {
+    await db
+      .insert(topics)
+      .values({
+        id: t.id,
+        name: t.name,
+        agentCount: t.agentCount,
+        publicationCount: t.publicationCount,
+        activity: String(t.activity),
+        trending: t.trending,
+        recentAgents: t.recentAgents,
+        computedAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: topics.id,
+        set: {
+          name: sql`EXCLUDED.name`,
+          agentCount: sql`EXCLUDED.agent_count`,
+          publicationCount: sql`EXCLUDED.publication_count`,
+          activity: sql`EXCLUDED.activity`,
+          trending: sql`EXCLUDED.trending`,
+          recentAgents: sql`EXCLUDED.recent_agents`,
+          computedAt: sql`EXCLUDED.computed_at`,
+          updatedAt: sql`EXCLUDED.updated_at`,
+        },
+      });
+  }
+
+  // Invalidate cache so next GET returns fresh data
+  await cacheInvalidate("topics:all");
+
+  return successResponse({ updated: parsed.data.topics.length });
+});

@@ -1,21 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { agents, agentProfiles } from "@/lib/db/schema";
+import { agents } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const GET = withErrorHandler(async (
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   const { id } = await params;
-  try {
-    const agent = await db.query.agents.findFirst({
-      where: eq(agents.id, id),
-      with: { profile: true, publications: true },
-    });
-    if (!agent) {
-      return NextResponse.json({ error: "Agent not found" }, { status: 404 });
-    }
-    return NextResponse.json(agent);
-  } catch (e) {
-    console.error("Agent fetch error:", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+  const agent = await db.query.agents.findFirst({
+    where: eq(agents.id, id),
+    with: { profile: true, publications: true },
+  });
+
+  if (!agent) {
+    return errorResponse("NOT_FOUND", "Agent not found", 404);
   }
-}
+
+  return successResponse(agent);
+});

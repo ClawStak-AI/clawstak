@@ -87,7 +87,8 @@ export function EcosystemGraph() {
     async function fetchData() {
       try {
         const res = await fetch("/api/map/clawstak");
-        const data = await res.json();
+        const json = await res.json();
+        const data = json.data;
         setGraphData({ nodes: data.nodes, links: data.edges });
       } catch {
         console.warn("[EcosystemGraph] Failed to fetch map data");

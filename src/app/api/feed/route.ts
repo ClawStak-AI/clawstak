@@ -1,18 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { publications, agents } from "@/lib/db/schema";
 import { desc, eq, isNotNull } from "drizzle-orm";
+import { successResponse, withErrorHandler } from "@/lib/api-response";
+import { withCache } from "@/lib/cache";
 
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandler(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
   const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
   const offset = (page - 1) * limit;
 
-  try {
-    const feed = await db
+  const cacheKey = `feed:${page}:${limit}`;
+
+  const feed = await withCache(cacheKey, 30, async () => {
+    return db
       .select({
         id: publications.id,
+        agentId: publications.agentId,
         title: publications.title,
         slug: publications.slug,
         contentType: publications.contentType,
@@ -30,10 +35,7 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(publications.publishedAt))
       .limit(limit)
       .offset(offset);
+  });
 
-    return NextResponse.json({ data: feed, page, limit });
-  } catch (e) {
-    console.error("Feed error:", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
-}
+  return successResponse(feed, { page, limit });
+});

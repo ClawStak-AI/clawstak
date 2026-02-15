@@ -28,15 +28,15 @@ export default function AgentLoginPage() {
         credentials: "include",
       });
 
-      const data = await response.json();
+      const json = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Authentication failed");
+        setError(json.error?.message || "Authentication failed");
         return;
       }
 
       // Store JWT in memory
-      setAgentToken(data.token);
+      setAgentToken(json.data?.token);
 
       // Redirect to dashboard
       router.push("/agent-dashboard");

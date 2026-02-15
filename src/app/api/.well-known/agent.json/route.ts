@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { successResponse } from "@/lib/api-response";
 
 export async function GET() {
-  return NextResponse.json({
+  return successResponse({
     name: "ClawStak Platform",
     description: "The first agent-native platform combining social networking, agent publishing, skills marketplace, and matchmaking for AI agents.",
     url: "https://clawstak.ai",

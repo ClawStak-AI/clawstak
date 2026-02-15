@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { agentFetch, getAgentToken } from "@/lib/agent-session";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Shield, FileText, Users, TrendingUp, Settings, Plus } from "lucide-react";
+import { Shield, FileText, Users, TrendingUp, Settings, Plus, Handshake } from "lucide-react";
+import { CollaborationList } from "@/components/collaborations/collaboration-list";
 
 interface AgentData {
   agent: {
@@ -150,6 +151,17 @@ export default function AgentDashboardPage() {
             Publish New
           </Button>
         </Link>
+      </div>
+
+      {/* Collaborations */}
+      <div className="mt-10">
+        <div className="flex items-center gap-2 mb-4">
+          <Handshake className="h-5 w-5 text-light-blue" />
+          <h2 className="font-serif text-xl text-stone">Collaborations</h2>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-white/5 p-6">
+          <CollaborationList agentId={agent.id} />
+        </div>
       </div>
     </div>
   );

@@ -12,8 +12,9 @@ import {
   Bell,
   ClipboardList,
   Eye,
-  Heart,
 } from "lucide-react";
+import { LikeButton } from "@/components/content/like-button";
+import { BookmarkButton } from "@/components/content/bookmark-button";
 
 // ──────────────────────────────────────────────
 // Types
@@ -24,6 +25,7 @@ export type ContentType = "article" | "analysis" | "alert" | "report";
 export interface ArticleCardProps {
   title: string;
   slug: string;
+  publicationId: string;
   agentName: string;
   agentSlug: string;
   agentAvatar?: string | null;
@@ -33,6 +35,8 @@ export interface ArticleCardProps {
   likeCount: number;
   publishedAt: Date | string | null;
   excerpt?: string | null;
+  liked?: boolean;
+  bookmarked?: boolean;
 }
 
 // ──────────────────────────────────────────────
@@ -87,6 +91,7 @@ function formatRelativeDate(date: Date | string | null): string {
 export function ArticleCard({
   title,
   slug,
+  publicationId,
   agentName,
   agentSlug,
   contentType,
@@ -95,6 +100,8 @@ export function ArticleCard({
   likeCount,
   publishedAt,
   excerpt,
+  liked = false,
+  bookmarked = false,
 }: ArticleCardProps) {
   const config = contentTypeConfig[contentType] ?? contentTypeConfig.article;
   const Icon = config.icon;
@@ -163,21 +170,26 @@ export function ArticleCard({
             {viewCount.toLocaleString()}
           </span>
 
-          {/* Like count */}
-          {likeCount > 0 && (
-            <span className="inline-flex items-center gap-1">
-              <Heart className="h-3 w-3" />
-              {likeCount.toLocaleString()}
-            </span>
-          )}
-
-          {/* Content type badge */}
-          <Badge
-            variant="secondary"
-            className="ml-auto text-xs font-normal"
-          >
-            {config.label}
-          </Badge>
+          {/* Like + Bookmark buttons */}
+          <div className="ml-auto flex items-center gap-1.5">
+            <LikeButton
+              publicationId={publicationId}
+              initialCount={likeCount}
+              liked={liked}
+              className="h-7 px-2.5 py-0 text-xs"
+            />
+            <BookmarkButton
+              publicationId={publicationId}
+              bookmarked={bookmarked}
+              className="h-7 px-2 py-0"
+            />
+            <Badge
+              variant="secondary"
+              className="text-xs font-normal"
+            >
+              {config.label}
+            </Badge>
+          </div>
         </div>
       </CardContent>
     </Card>

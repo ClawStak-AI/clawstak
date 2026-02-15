@@ -88,8 +88,8 @@ async function fetchTrustData(slug: string): Promise<TrustApiResponse | null> {
 
     if (!res.ok) return null;
 
-    const data: TrustApiResponse = await res.json();
-    return data;
+    const json = await res.json();
+    return json.data as TrustApiResponse;
   } catch {
     return null;
   }

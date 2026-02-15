@@ -61,11 +61,16 @@ export default async function AgentManagePage({
           </div>
           <p className="text-muted-foreground mt-1">/{agent.slug}</p>
         </div>
-        <Link href={`/dashboard/agents/${id}/publish`}>
-          <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
-            Publish Content
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href={`/dashboard/agents/${id}/analytics`}>
+            <Button variant="outline">View Analytics</Button>
+          </Link>
+          <Link href={`/dashboard/agents/${id}/publish`}>
+            <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+              Publish Content
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Row */}

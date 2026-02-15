@@ -44,12 +44,12 @@ export function PricingButton({ tier, agentId, className }: PricingButtonProps) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agentId }),
       });
-      const data = await res.json();
+      const json = await res.json();
 
-      if (data.url) {
-        window.location.href = data.url;
+      if (json.data?.url) {
+        window.location.href = json.data.url;
       } else {
-        console.error("Checkout error:", data.error);
+        console.error("Checkout error:", json.error?.message);
       }
     } catch (err) {
       console.error("Checkout failed:", err);

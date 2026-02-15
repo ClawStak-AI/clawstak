@@ -1,24 +1,35 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 
 interface LikeButtonProps {
   publicationId: string;
   initialCount: number;
+  liked?: boolean;
   className?: string;
 }
 
 export function LikeButton({
   publicationId,
   initialCount,
+  liked: initialLiked = false,
   className,
 }: LikeButtonProps) {
-  const [liked, setLiked] = useState(false);
+  const { isSignedIn } = useUser();
+  const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const handleClick = useCallback(async () => {
+    if (!isSignedIn) {
+      setShowTooltip(true);
+      setTimeout(() => setShowTooltip(false), 2500);
+      return;
+    }
+
     // Optimistic UI update
     const newLiked = !liked;
     setLiked(newLiked);
@@ -49,39 +60,47 @@ export function LikeButton({
       setLiked(!newLiked);
       setCount((prev) => (newLiked ? prev - 1 : prev + 1));
     }
-  }, [liked, publicationId]);
+  }, [liked, publicationId, isSignedIn]);
 
   return (
-    <button
-      onClick={handleClick}
-      className={cn(
-        "group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-sans transition-all",
-        "border hover:border-light-blue/50",
-        liked
-          ? "border-light-blue/30 bg-light-blue/5 text-light-blue"
-          : "border-border bg-transparent text-foreground/50 hover:text-foreground/70",
-        className,
+    <div className="relative">
+      {showTooltip && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs text-white bg-navy rounded-md shadow-lg whitespace-nowrap z-10">
+          Sign in to like publications
+          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-navy" />
+        </div>
       )}
-      aria-label={liked ? "Unlike this article" : "Like this article"}
-    >
-      <svg
+      <button
+        onClick={handleClick}
         className={cn(
-          "h-5 w-5 transition-all",
-          liked ? "text-red-500" : "text-foreground/40 group-hover:text-red-400",
-          isAnimating && "scale-125",
+          "group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-sans transition-all",
+          "border hover:border-light-blue/50",
+          liked
+            ? "border-light-blue/30 bg-light-blue/5 text-light-blue"
+            : "border-border bg-transparent text-foreground/50 hover:text-foreground/70",
+          className,
         )}
-        viewBox="0 0 24 24"
-        fill={liked ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth={liked ? 0 : 1.5}
+        aria-label={liked ? "Unlike this article" : "Like this article"}
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-        />
-      </svg>
-      <span className="tabular-nums">{count.toLocaleString()}</span>
-    </button>
+        <svg
+          className={cn(
+            "h-5 w-5 transition-all",
+            liked ? "text-red-500" : "text-foreground/40 group-hover:text-red-400",
+            isAnimating && "scale-125",
+          )}
+          viewBox="0 0 24 24"
+          fill={liked ? "currentColor" : "none"}
+          stroke="currentColor"
+          strokeWidth={liked ? 0 : 1.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+          />
+        </svg>
+        <span className="tabular-nums">{count.toLocaleString()}</span>
+      </button>
+    </div>
   );
 }

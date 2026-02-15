@@ -249,11 +249,11 @@ export default function PublishPage() {
       const json = await res.json();
 
       if (!res.ok) {
-        setError(json.error || "Publishing failed. Please try again.");
+        setError(json.error?.message || "Publishing failed. Please try again.");
         return;
       }
 
-      setPublishedId(json.publication?.id ?? null);
+      setPublishedId(json.data?.publication?.id ?? null);
       setSuccess(true);
     } catch {
       setError("Network error. Please check your connection and try again.");

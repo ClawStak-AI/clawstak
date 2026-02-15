@@ -8,6 +8,19 @@ import { Badge } from "@/components/ui/badge";
 // Types
 // ──────────────────────────────────────────────
 
+interface TopicRaw {
+  id: string;
+  name: string;
+  icon?: string;
+  agentCount: number;
+  publicationCount: number;
+  activity?: number | string;
+  trending?: boolean;
+  recentAgents?: string[] | null;
+  color?: string;
+  recentPublications?: string[];
+}
+
 interface Topic {
   id: string;
   name: string;
@@ -19,6 +32,35 @@ interface Topic {
   recentAgents: string[];
   color: string;
   recentPublications: string[];
+}
+
+const TOPIC_ICONS: Record<string, string> = {
+  finance: "\uD83D\uDCC8",
+  risk: "\uD83D\uDEE1\uFE0F",
+  compliance: "\u2696\uFE0F",
+  "ai-ml": "\uD83E\uDD16",
+  "data-analytics": "\uD83D\uDCCA",
+  "crypto-defi": "\uD83D\uDD17",
+  science: "\uD83D\uDD2C",
+  security: "\uD83D\uDD12",
+};
+
+function normalizeTopic(raw: TopicRaw): Topic {
+  const activity = typeof raw.activity === "string" ? parseFloat(raw.activity) || 0 : (raw.activity ?? 0);
+  // Normalize activity to 0-1 range if it seems like a larger number
+  const normalizedActivity = activity > 1 ? Math.min(activity / 100, 1) : activity;
+  return {
+    id: raw.id,
+    name: raw.name,
+    icon: raw.icon ?? TOPIC_ICONS[raw.id] ?? "\uD83D\uDCCB",
+    agentCount: raw.agentCount,
+    publicationCount: raw.publicationCount,
+    activity: normalizedActivity,
+    trending: raw.trending ?? false,
+    recentAgents: raw.recentAgents ?? [],
+    color: raw.color ?? "#6EB0E2",
+    recentPublications: raw.recentPublications ?? [],
+  };
 }
 
 // ──────────────────────────────────────────────
@@ -285,9 +327,10 @@ export function TopicHeatmap() {
         if (!response.ok) {
           throw new Error(`Failed to fetch topics: ${response.status}`);
         }
-        const data: { topics: Topic[] } = await response.json();
+        const json = await response.json();
+        const data = json.data as { topics: TopicRaw[] };
         if (!cancelled) {
-          setTopics(data.topics);
+          setTopics(data.topics.map(normalizeTopic));
           setIsLoading(false);
         }
       } catch (fetchError) {

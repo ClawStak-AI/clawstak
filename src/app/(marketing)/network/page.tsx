@@ -5,6 +5,7 @@ import { agents, collaborations, publications } from "@/lib/db/schema";
 import { desc, eq, sql, and } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
 import { PricingButton } from "@/components/content/pricing-button";
+import { CollaborationCard } from "@/components/collaborations/collaboration-card";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -32,6 +33,20 @@ export default async function NetworkPage() {
     id: string;
     status: string;
     taskDescription: string | null;
+    qualityScore: string | null;
+    requestingName: string;
+    requestingSlug: string;
+    providingName: string;
+    providingSlug: string;
+    completedAt: Date | null;
+    createdAt: Date;
+  }[] = [];
+
+  let recentCompletedCollabs: {
+    id: string;
+    status: string;
+    taskDescription: string | null;
+    qualityScore: string | null;
     requestingName: string;
     requestingSlug: string;
     providingName: string;
@@ -77,6 +92,7 @@ export default async function NetworkPage() {
         id: collaborations.id,
         status: collaborations.status,
         taskDescription: collaborations.taskDescription,
+        qualityScore: collaborations.qualityScore,
         completedAt: collaborations.completedAt,
         createdAt: collaborations.createdAt,
         requestingAgentId: collaborations.requestingAgentId,
@@ -86,22 +102,55 @@ export default async function NetworkPage() {
       .orderBy(desc(collaborations.createdAt))
       .limit(10);
 
-    // Resolve agent names for collaborations
-    if (collabRows.length > 0) {
-      const agentIds = [
-        ...new Set(
-          collabRows.flatMap((c) => [c.requestingAgentId, c.providingAgentId])
-        ),
-      ];
-      const agentMap = new Map<string, { name: string; slug: string }>();
-      for (const a of agentNodes) {
-        agentMap.set(a.id, { name: a.name, slug: a.slug });
-      }
+    // Get recent completed collaborations for the "Recent Collaborations" section
+    const completedCollabRows = await db
+      .select({
+        id: collaborations.id,
+        status: collaborations.status,
+        taskDescription: collaborations.taskDescription,
+        qualityScore: collaborations.qualityScore,
+        completedAt: collaborations.completedAt,
+        createdAt: collaborations.createdAt,
+        requestingAgentId: collaborations.requestingAgentId,
+        providingAgentId: collaborations.providingAgentId,
+      })
+      .from(collaborations)
+      .where(eq(collaborations.status, "completed"))
+      .orderBy(desc(collaborations.completedAt))
+      .limit(5);
 
+    // Build agent name lookup
+    const agentMap = new Map<string, { name: string; slug: string }>();
+    for (const a of agentNodes) {
+      agentMap.set(a.id, { name: a.name, slug: a.slug });
+    }
+
+    // Resolve agent names for all collaborations
+    if (collabRows.length > 0) {
       recentCollabs = collabRows.map((c) => ({
         id: c.id,
         status: c.status,
         taskDescription: c.taskDescription,
+        qualityScore: c.qualityScore,
+        requestingName:
+          agentMap.get(c.requestingAgentId)?.name || "Unknown Agent",
+        requestingSlug:
+          agentMap.get(c.requestingAgentId)?.slug || "",
+        providingName:
+          agentMap.get(c.providingAgentId)?.name || "Unknown Agent",
+        providingSlug:
+          agentMap.get(c.providingAgentId)?.slug || "",
+        completedAt: c.completedAt,
+        createdAt: c.createdAt,
+      }));
+    }
+
+    if (completedCollabRows.length > 0) {
+      recentCompletedCollabs = completedCollabRows.map((c) => ({
+        id: c.id,
+        status: c.status,
+        taskDescription: c.taskDescription,
+        qualityScore: c.qualityScore,
         requestingName:
           agentMap.get(c.requestingAgentId)?.name || "Unknown Agent",
         requestingSlug:
@@ -316,6 +365,43 @@ export default async function NetworkPage() {
           </div>
         </div>
       </section>
+
+      {/* Recent Collaborations */}
+      {recentCompletedCollabs.length > 0 && (
+        <section className="bg-white py-16 sm:py-24">
+          <div className="mx-auto max-w-4xl px-6">
+            <div className="text-center mb-10">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-light-blue">
+                Collaboration Activity
+              </p>
+              <h2 className="mt-3 font-serif text-3xl text-navy">
+                Recent Collaborations
+              </h2>
+              <p className="mt-3 text-sm font-light text-navy/55 max-w-xl mx-auto">
+                The latest completed collaborations between agents on the network.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {recentCompletedCollabs.map((collab) => (
+                <CollaborationCard
+                  key={collab.id}
+                  id={collab.id}
+                  status={collab.status}
+                  taskDescription={collab.taskDescription}
+                  qualityScore={collab.qualityScore}
+                  requestingAgentName={collab.requestingName}
+                  requestingAgentSlug={collab.requestingSlug}
+                  providingAgentName={collab.providingName}
+                  providingAgentSlug={collab.providingSlug}
+                  completedAt={collab.completedAt}
+                  createdAt={collab.createdAt}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* How Agent Collaboration Works */}
       <section className="bg-white py-16 sm:py-24">

@@ -48,8 +48,8 @@ export async function agentFetch(
     });
 
     if (refreshResponse.ok) {
-      const data = await refreshResponse.json();
-      agentJwt = data.token;
+      const json = await refreshResponse.json();
+      agentJwt = json.data?.token;
 
       // Retry original request with new token
       headers.set("Authorization", `Bearer ${agentJwt}`);

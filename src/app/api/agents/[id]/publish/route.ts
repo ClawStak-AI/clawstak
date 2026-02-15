@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { publications, agentApiKeys } from "@/lib/db/schema";
+import { publications, agentApiKeys, agents, follows, notifications, users, agentMetrics } from "@/lib/db/schema";
 import { hashApiKey } from "@/lib/api-keys";
 import { generateSlug } from "@/lib/utils";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
+import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
 const publishSchema = z.object({
   title: z.string().min(1).max(500),
@@ -14,55 +15,144 @@ const publishSchema = z.object({
   visibility: z.enum(["public", "subscribers", "private"]).default("public"),
 });
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const POST = withErrorHandler(async (
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   const { id: agentId } = await params;
+
+  // Authenticate via API key
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer cs_")) {
+    return errorResponse("INVALID_KEY_FORMAT", "Invalid API key format", 401);
+  }
+
+  const apiKey = authHeader.replace("Bearer ", "");
+  const keyHash = hashApiKey(apiKey);
+
+  const [validKey] = await db.select()
+    .from(agentApiKeys)
+    .where(and(eq(agentApiKeys.agentId, agentId), eq(agentApiKeys.keyHash, keyHash), eq(agentApiKeys.isActive, true)));
+
+  if (!validKey) {
+    return errorResponse("UNAUTHORIZED", "Unauthorized", 401);
+  }
+
+  if (!validKey.permissions?.includes("publish")) {
+    return errorResponse("FORBIDDEN", "Insufficient permissions", 403);
+  }
+
+  let body: unknown;
   try {
-    // Authenticate via API key
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer cs_")) {
-      return NextResponse.json({ error: "Invalid API key format" }, { status: 401 });
-    }
+    body = await request.json();
+  } catch {
+    return errorResponse("INVALID_BODY", "Invalid JSON body", 400);
+  }
 
-    const apiKey = authHeader.replace("Bearer ", "");
-    const keyHash = hashApiKey(apiKey);
+  const parsed = publishSchema.safeParse(body);
+  if (!parsed.success) {
+    return errorResponse("VALIDATION_ERROR", "Invalid input", 400, parsed.error.flatten());
+  }
 
-    const [validKey] = await db.select()
-      .from(agentApiKeys)
-      .where(and(eq(agentApiKeys.agentId, agentId), eq(agentApiKeys.keyHash, keyHash), eq(agentApiKeys.isActive, true)));
+  const slug = generateSlug(parsed.data.title);
 
-    if (!validKey) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const [publication] = await db.insert(publications).values({
+    agentId,
+    title: parsed.data.title,
+    slug,
+    contentMd: parsed.data.contentMd,
+    contentType: parsed.data.contentType,
+    tags: parsed.data.tags,
+    visibility: parsed.data.visibility,
+    publishedAt: new Date(),
+  }).returning();
 
-    if (!validKey.permissions?.includes("publish")) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-    }
+  // Update API key last used
+  await db.update(agentApiKeys).set({ lastUsedAt: new Date() }).where(eq(agentApiKeys.id, validKey.id));
 
-    const body = await request.json();
-    const parsed = publishSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 });
-    }
+  // Fire-and-forget: notify all followers of this agent
+  notifyFollowers(agentId, publication.id, parsed.data.title).catch((err) => {
+    console.error("Failed to send publish notifications:", err);
+  });
 
-    const slug = generateSlug(parsed.data.title);
+  // Fire-and-forget: update agentMetrics taskCompletions
+  updateAgentMetrics(agentId).catch((err) => {
+    console.error("Failed to update agent metrics:", err);
+  });
 
-    const [publication] = await db.insert(publications).values({
+  return successResponse({ publication }, undefined, 201);
+});
+
+async function notifyFollowers(
+  agentId: string,
+  publicationId: string,
+  publicationTitle: string,
+): Promise<void> {
+  // Get agent name
+  const [agent] = await db
+    .select({ name: agents.name })
+    .from(agents)
+    .where(eq(agents.id, agentId));
+
+  if (!agent) return;
+
+  // Get all followers with their Clerk user IDs
+  const followerRows = await db
+    .select({ clerkId: users.clerkId })
+    .from(follows)
+    .innerJoin(users, eq(follows.userId, users.id))
+    .where(eq(follows.agentId, agentId));
+
+  if (followerRows.length === 0) return;
+
+  // Insert notifications in batch
+  const notificationValues = followerRows.map((row) => ({
+    userId: row.clerkId,
+    type: "new_publication" as const,
+    title: `${agent.name} published new content`,
+    message: publicationTitle,
+    entityType: "publication" as const,
+    entityId: publicationId,
+  }));
+
+  await db.insert(notifications).values(notificationValues);
+}
+
+async function updateAgentMetrics(agentId: string): Promise<void> {
+  const now = new Date();
+  // Use the start of the current week as the period boundary
+  const weekStart = new Date(now);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+
+  // Check if a metrics row exists for this agent + weekly period
+  const [existing] = await db
+    .select({ id: agentMetrics.id })
+    .from(agentMetrics)
+    .where(
+      and(
+        eq(agentMetrics.agentId, agentId),
+        eq(agentMetrics.period, "weekly"),
+        eq(agentMetrics.periodStart, weekStart),
+      ),
+    );
+
+  if (existing) {
+    // Increment taskCompletions
+    await db
+      .update(agentMetrics)
+      .set({
+        taskCompletions: sql`${agentMetrics.taskCompletions} + 1`,
+        updatedAt: now,
+      })
+      .where(eq(agentMetrics.id, existing.id));
+  } else {
+    // Insert new metrics row
+    await db.insert(agentMetrics).values({
       agentId,
-      title: parsed.data.title,
-      slug,
-      contentMd: parsed.data.contentMd,
-      contentType: parsed.data.contentType,
-      tags: parsed.data.tags,
-      visibility: parsed.data.visibility,
-      publishedAt: new Date(),
-    }).returning();
-
-    // Update API key last used
-    await db.update(agentApiKeys).set({ lastUsedAt: new Date() }).where(eq(agentApiKeys.id, validKey.id));
-
-    return NextResponse.json({ publication }, { status: 201 });
-  } catch (e: any) {
-    console.error("Publish error:", e);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+      period: "weekly",
+      periodStart: weekStart,
+      taskCompletions: 1,
+    });
   }
 }

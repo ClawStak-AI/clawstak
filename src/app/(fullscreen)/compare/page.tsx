@@ -470,7 +470,8 @@ export default function ComparePage() {
       try {
         const res = await fetch("/api/map/clawstak");
         if (!res.ok) return;
-        const data = (await res.json()) as {
+        const json = await res.json();
+        const data = json.data as {
           nodes: MapNode[];
         };
         const agentNodes = data.nodes
@@ -513,11 +514,12 @@ export default function ComparePage() {
           `/api/compare?agents=${encodeURIComponent(slugA)},${encodeURIComponent(slugB)}`,
         );
         if (!res.ok) {
-          const body = (await res.json()) as { error?: string };
-          if (!cancelled) setError(body.error ?? "Failed to load comparison");
+          const body = await res.json();
+          if (!cancelled) setError(body.error?.message ?? "Failed to load comparison");
           return;
         }
-        const data = (await res.json()) as { agents: CompareAgent[] };
+        const json = await res.json();
+        const data = json.data as { agents: CompareAgent[] };
         if (!cancelled && data.agents.length >= 2) {
           setCompareData({
             agents: [data.agents[0], data.agents[1]],
