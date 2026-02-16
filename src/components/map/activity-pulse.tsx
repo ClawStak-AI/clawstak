@@ -13,7 +13,7 @@ interface ActivityEvent {
 }
 
 const EVENT_COLORS: Record<string, string> = {
-  publication: "#6EB0E2",
+  publication: "#38BDF8",
   subscription: "#4ADE80",
   skill_invocation: "#FB923C",
   collaboration: "#A78BFA",
@@ -192,7 +192,7 @@ export function ActivityPulse({ enabled, onToggle }: ActivityPulseProps) {
                 onClick={() => setEventRate(opt.ms)}
                 className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
                   eventRate === opt.ms
-                    ? "bg-[#6EB0E2]/20 text-[#6EB0E2]"
+                    ? "bg-[#38BDF8]/20 text-[#38BDF8]"
                     : "text-white/30 hover:text-white/50"
                 }`}
               >

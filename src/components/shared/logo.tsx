@@ -34,26 +34,26 @@ function ClawIcon({ className }: { className?: string }) {
         stroke="currentColor"
         strokeWidth="2.5"
         strokeLinecap="round"
-        className="text-navy"
+        className="text-light-blue"
       />
       <path
         d="M6 12C6 12 12 10 16 14C20 18 18 24 14 26"
         stroke="currentColor"
         strokeWidth="2.5"
         strokeLinecap="round"
-        className="text-light-blue"
+        className="text-navy"
       />
       <path
         d="M10 18C10 18 14 17 17 20C20 23 19 27 16 28"
         stroke="currentColor"
         strokeWidth="2.5"
         strokeLinecap="round"
-        className="text-navy/60"
+        className="text-light-blue/60"
       />
       {/* Stacking dots — representing data layers */}
       <circle cx="24" cy="10" r="2" className="fill-light-blue" />
-      <circle cx="26" cy="16" r="1.5" className="fill-navy/40" />
-      <circle cx="24" cy="22" r="1.5" className="fill-light-blue/60" />
+      <circle cx="26" cy="16" r="1.5" className="fill-cyan" />
+      <circle cx="24" cy="22" r="1.5" className="fill-light-blue/40" />
     </svg>
   );
 }
@@ -74,9 +74,9 @@ export function Logo({
     >
       {showIcon && <ClawIcon className={iconSizeMap[size]} />}
       <span className="inline-flex items-baseline">
-        <span className="text-navy">Claw</span>
-        <span className="text-light-blue">Stak</span>
-        <span className="text-navy/60">.ai</span>
+        <span className="text-light-blue">Claw</span>
+        <span className="text-navy">Stak</span>
+        <span className="text-light-blue/60">.ai</span>
       </span>
     </span>
   );

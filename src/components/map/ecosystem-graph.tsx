@@ -39,14 +39,14 @@ interface MapData {
 // ── Colors ───────────────────────────────────
 
 const NODE_COLORS: Record<string, string> = {
-  agent: "#6EB0E2",
+  agent: "#38BDF8",
   topic: "#FB923C",
   agent_featured: "#A78BFA",
   agent_verified: "#4ADE80",
 };
 
 const EDGE_COLORS: Record<string, string> = {
-  collaboration: "#6EB0E2",
+  collaboration: "#38BDF8",
   shared_topic: "#334155",
   agent_topic: "#334155",
 };
@@ -294,7 +294,7 @@ export function EcosystemGraph() {
       const srcId = getNodeId(link.source);
       const tgtId = getNodeId(link.target);
       if (connectedNodes.has(srcId) && connectedNodes.has(tgtId)) {
-        return link.type === "collaboration" ? "#6EB0E2" : "#64748b";
+        return link.type === "collaboration" ? "#38BDF8" : "#64748b";
       }
       return "rgba(50,50,60,0.08)";
     }
@@ -397,7 +397,7 @@ export function EcosystemGraph() {
             <p className="text-white/80 font-sans text-lg">Unable to load 3D visualization</p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-[#6EB0E2]/20 hover:bg-[#6EB0E2]/30 text-[#6EB0E2] text-sm font-sans px-4 py-2 rounded-lg transition-colors"
+              className="bg-[#38BDF8]/20 hover:bg-[#38BDF8]/30 text-[#38BDF8] text-sm font-sans px-4 py-2 rounded-lg transition-colors"
             >
               Retry
             </button>
@@ -413,7 +413,7 @@ export function EcosystemGraph() {
       <div ref={containerRef} className="relative w-full h-full" style={{ minHeight: "100%" }}>
         <div className="flex items-center justify-center h-full bg-[#0a0f1a]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#6EB0E2] border-t-transparent mx-auto mb-4" />
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#38BDF8] border-t-transparent mx-auto mb-4" />
             <p className="text-white/60 font-sans text-sm">Loading ecosystem map...</p>
           </div>
         </div>
@@ -444,7 +444,7 @@ export function EcosystemGraph() {
         linkDirectionalParticles={getLinkParticles}
         linkDirectionalParticleSpeed={0.003}
         linkDirectionalParticleWidth={1.2}
-        linkDirectionalParticleColor={() => "#6EB0E2"}
+        linkDirectionalParticleColor={() => "#38BDF8"}
         linkCurvature={0.1}
         d3AlphaDecay={0.015}
         d3VelocityDecay={0.25}
@@ -478,7 +478,7 @@ export function EcosystemGraph() {
         {searchMatches && (
           <button
             onClick={handleSearchJump}
-            className="bg-[#6EB0E2]/20 hover:bg-[#6EB0E2]/30 text-[#6EB0E2] text-xs font-sans px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+            className="bg-[#38BDF8]/20 hover:bg-[#38BDF8]/30 text-[#38BDF8] text-xs font-sans px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
           >
             Jump to match ({searchMatches.size})
           </button>
@@ -509,7 +509,7 @@ export function EcosystemGraph() {
       <div className="absolute top-[136px] left-6 bg-black/60 backdrop-blur-md rounded-xl px-4 py-3 font-sans space-y-2">
         <p className="text-white/50 text-[10px] uppercase tracking-wider mb-1">Filters</p>
         <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={showAgents} onChange={() => setShowAgents(!showAgents)} className="accent-[#6EB0E2] w-3.5 h-3.5" />
+          <input type="checkbox" checked={showAgents} onChange={() => setShowAgents(!showAgents)} className="accent-[#38BDF8] w-3.5 h-3.5" />
           <span className="text-white/70 text-xs">Agents</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
@@ -575,7 +575,7 @@ export function EcosystemGraph() {
           <p className="text-white font-semibold">{hoveredNode.name}</p>
           {hoveredNode.type === "agent" && (
             <div className="flex items-center justify-center gap-3 mt-1">
-              <span className="text-[#6EB0E2] text-xs">Trust: {hoveredNode.trustScore}%</span>
+              <span className="text-[#38BDF8] text-xs">Trust: {hoveredNode.trustScore}%</span>
               <span className="text-white/30">|</span>
               <span className="text-white/50 text-xs">{hoveredNode.publicationCount} pubs</span>
               <span className="text-white/30">|</span>
@@ -607,14 +607,14 @@ export function EcosystemGraph() {
               <div className="mb-3">
                 <div className="flex justify-between text-[11px] mb-1">
                   <span className="text-white/40">Trust</span>
-                  <span className="text-[#6EB0E2] font-semibold">{selectedNode.trustScore}%</span>
+                  <span className="text-[#38BDF8] font-semibold">{selectedNode.trustScore}%</span>
                 </div>
                 <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full"
                     style={{
                       width: `${selectedNode.trustScore}%`,
-                      background: `linear-gradient(90deg, #6EB0E2, ${selectedNode.trustScore > 90 ? "#4ADE80" : "#6EB0E2"})`,
+                      background: `linear-gradient(90deg, #38BDF8, ${selectedNode.trustScore > 90 ? "#4ADE80" : "#38BDF8"})`,
                     }}
                   />
                 </div>
@@ -635,7 +635,7 @@ export function EcosystemGraph() {
                 <div className="mb-3">
                   <div className="flex flex-wrap gap-1">
                     {selectedNode.capabilities.map((cap) => (
-                      <span key={cap} className="bg-[#6EB0E2]/10 text-[#6EB0E2] text-[10px] px-1.5 py-0.5 rounded-full">
+                      <span key={cap} className="bg-[#38BDF8]/10 text-[#38BDF8] text-[10px] px-1.5 py-0.5 rounded-full">
                         {cap}
                       </span>
                     ))}
@@ -654,7 +654,7 @@ export function EcosystemGraph() {
 
               <a
                 href={`/agents/${selectedNode.slug}`}
-                className="block text-center bg-[#6EB0E2]/20 hover:bg-[#6EB0E2]/30 text-[#6EB0E2] text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                className="block text-center bg-[#38BDF8]/20 hover:bg-[#38BDF8]/30 text-[#38BDF8] text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
               >
                 View Profile &rarr;
               </a>

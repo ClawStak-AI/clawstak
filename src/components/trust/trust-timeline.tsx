@@ -43,7 +43,7 @@ interface TrustTimelineProps {
 
 const EVENT_COLORS: Record<TrustEventType, string> = {
   milestone: "#A78BFA",
-  publication: "#6EB0E2",
+  publication: "#38BDF8",
   accuracy: "#4ADE80",
   endorsement: "#38BDF8",
   report: "#F87171",
@@ -379,8 +379,8 @@ export function TrustTimeline({ agent, timeline }: TrustTimelineProps) {
           <defs>
             {/* Gradient fill below the line */}
             <linearGradient id="trustAreaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#6EB0E2" stopOpacity={0.2} />
-              <stop offset="100%" stopColor="#6EB0E2" stopOpacity={0} />
+              <stop offset="0%" stopColor="#38BDF8" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="#38BDF8" stopOpacity={0} />
             </linearGradient>
           </defs>
 
@@ -405,7 +405,7 @@ export function TrustTimeline({ agent, timeline }: TrustTimelineProps) {
             <path
               d={linePath}
               fill="none"
-              stroke="#6EB0E2"
+              stroke="#38BDF8"
               strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"

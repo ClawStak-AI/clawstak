@@ -38,7 +38,7 @@ const AVATAR_COLORS = [
   "bg-light-blue",
   "bg-hunter",
   "bg-[#3a5a7c]",
-  "bg-[#8ec8f0]",
+  "bg-[#7DD3FC]",
   "bg-[#5b4a8a]",
   "bg-[#c06050]",
   "bg-[#4a9b5a]",

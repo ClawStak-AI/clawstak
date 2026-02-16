@@ -6,13 +6,16 @@
  * ClawStak.ai Brand System
  * Tailwind CSS v4 — CSS-based configuration
  *
- * Brand Palette:
- *   Navy       #20354F  — primary, text, headings
- *   Light Blue #6EB0E2  — accent, CTAs, links
- *   Stone      #EDECF1  — background
- *   Hunter     #273529  — secondary accent, success
+ * Brand Palette (Updated Feb 2026):
+ *   Light Blue #38BDF8  — primary, CTAs, hero accents
+ *   Navy       #1E293B  — secondary, text, headings
+ *   Stone      #F8FAFC  — background (lighter, less institutional)
+ *   Cyan       #06B6D4  — accent highlights
+ *   Hunter     #273529  — success states
  *   Black      #000000
  *   White      #FFFFFF
+ *
+ * Vibe: Modern fintech startup (Linear/Vercel aesthetic), NOT institutional bank
  */
 
 @custom-variant dark (&:is(.dark *));
@@ -27,11 +30,12 @@
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace,
     monospace;
 
-  /* ── Brand colors (raw palette) ── */
-  --color-navy: #20354f;
-  --color-light-blue: #6eb0e2;
-  --color-stone: #edecf1;
+  /* ── Brand colors (raw palette — updated) ── */
+  --color-navy: #1e293b;
+  --color-light-blue: #38bdf8;
+  --color-stone: #f8fafc;
   --color-hunter: #273529;
+  --color-cyan: #06b6d4;
 
   /* ── Semantic shadcn/ui mappings ── */
   --color-background: var(--background);
@@ -87,107 +91,107 @@
 :root {
   --radius: 0.625rem;
 
-  /* Core surfaces */
-  --background: #edecf1;
-  --foreground: #20354f;
+  /* Core surfaces — lighter, more modern */
+  --background: #f8fafc;
+  --foreground: #1e293b;
 
-  /* Primary — Navy */
-  --primary: #20354f;
-  --primary-foreground: #edecf1;
+  /* Primary — Light Blue (modern, approachable) */
+  --primary: #38bdf8;
+  --primary-foreground: #0f172a;
 
-  /* Secondary — Light Blue */
-  --secondary: #6eb0e2;
-  --secondary-foreground: #20354f;
+  /* Secondary — Navy (grounding, trust) */
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
 
-  /* Accent — Light Blue */
-  --accent: #6eb0e2;
-  --accent-foreground: #20354f;
+  /* Accent — Cyan */
+  --accent: #06b6d4;
+  --accent-foreground: #0f172a;
 
-  /* Muted — Stone with translucent Navy foreground */
-  --muted: #edecf1;
-  --muted-foreground: #20354f80;
+  /* Muted — Slate tones */
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
 
   /* Card — White */
   --card: #ffffff;
-  --card-foreground: #20354f;
+  --card-foreground: #1e293b;
 
   /* Popover — White */
   --popover: #ffffff;
-  --popover-foreground: #20354f;
+  --popover-foreground: #1e293b;
 
   /* Destructive */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  /* Borders & input */
-  --border: #20354f20;
-  --input: #20354f20;
-  --ring: #6eb0e2;
+  /* Borders & input — softer */
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #38bdf8;
 
   /* Charts — brand-derived palette */
-  --chart-1: #20354f;
-  --chart-2: #6eb0e2;
-  --chart-3: #273529;
-  --chart-4: #8ec8f0;
-  --chart-5: #3a5a7c;
+  --chart-1: #38bdf8;
+  --chart-2: #1e293b;
+  --chart-3: #06b6d4;
+  --chart-4: #7dd3fc;
+  --chart-5: #0ea5e9;
 
   /* Sidebar */
   --sidebar: #ffffff;
-  --sidebar-foreground: #20354f;
-  --sidebar-primary: #20354f;
-  --sidebar-primary-foreground: #edecf1;
-  --sidebar-accent: #6eb0e2;
-  --sidebar-accent-foreground: #20354f;
-  --sidebar-border: #20354f20;
-  --sidebar-ring: #6eb0e2;
+  --sidebar-foreground: #1e293b;
+  --sidebar-primary: #38bdf8;
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #06b6d4;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #38bdf8;
 }
 
 /* ───────────────────────────────────────────────
    Dark mode
    ─────────────────────────────────────────────── */
 .dark {
-  --background: #0f1a29;
-  --foreground: #edecf1;
+  --background: #0f172a;
+  --foreground: #f1f5f9;
 
-  --primary: #6eb0e2;
-  --primary-foreground: #0f1a29;
+  --primary: #38bdf8;
+  --primary-foreground: #0f172a;
 
-  --secondary: #20354f;
-  --secondary-foreground: #edecf1;
+  --secondary: #1e293b;
+  --secondary-foreground: #f1f5f9;
 
-  --accent: #6eb0e2;
-  --accent-foreground: #0f1a29;
+  --accent: #06b6d4;
+  --accent-foreground: #0f172a;
 
-  --muted: #1a2b40;
-  --muted-foreground: #edecf180;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
 
-  --card: #162236;
-  --card-foreground: #edecf1;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
 
-  --popover: #162236;
-  --popover-foreground: #edecf1;
+  --popover: #1e293b;
+  --popover-foreground: #f1f5f9;
 
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  --border: #edecf115;
-  --input: #edecf120;
-  --ring: #6eb0e2;
+  --border: #334155;
+  --input: #334155;
+  --ring: #38bdf8;
 
-  --chart-1: #6eb0e2;
-  --chart-2: #8ec8f0;
-  --chart-3: #4a9b5a;
-  --chart-4: #a3d4f7;
-  --chart-5: #3a5a7c;
+  --chart-1: #38bdf8;
+  --chart-2: #7dd3fc;
+  --chart-3: #06b6d4;
+  --chart-4: #0ea5e9;
+  --chart-5: #67e8f9;
 
-  --sidebar: #162236;
-  --sidebar-foreground: #edecf1;
-  --sidebar-primary: #6eb0e2;
-  --sidebar-primary-foreground: #0f1a29;
-  --sidebar-accent: #1a2b40;
-  --sidebar-accent-foreground: #edecf1;
-  --sidebar-border: #edecf115;
-  --sidebar-ring: #6eb0e2;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #38bdf8;
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f1f5f9;
+  --sidebar-border: #334155;
+  --sidebar-ring: #38bdf8;
 }
 
 /* ───────────────────────────────────────────────
@@ -216,7 +220,7 @@
   h5,
   h6 {
     font-family: var(--font-serif);
-    color: var(--color-navy);
+    color: var(--foreground);
     font-weight: 400;
   }
 
