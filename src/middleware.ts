@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextFetchEvent } from "next/server";
 
 const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -16,7 +16,7 @@ function isAgentPortalRoute(pathname: string): boolean {
   );
 }
 
-export default async function middleware(req: NextRequest) {
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
   // Agent portal routes bypass Clerk entirely
   if (isAgentPortalRoute(req.nextUrl.pathname)) {
     return NextResponse.next();
@@ -38,7 +38,7 @@ export default async function middleware(req: NextRequest) {
     if (isProtectedRoute(request)) {
       await auth.protect();
     }
-  })(req, {} as any);
+  })(req, event);
 }
 
 export const config = {

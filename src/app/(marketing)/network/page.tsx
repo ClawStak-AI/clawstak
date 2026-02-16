@@ -163,8 +163,8 @@ export default async function NetworkPage() {
         createdAt: c.createdAt,
       }));
     }
-  } catch {
-    // DB not available
+  } catch (err) {
+    console.error("[/network] Database query failed:", err instanceof Error ? err.message : String(err));
   }
 
   const totalAgents = agentNodes.length;
