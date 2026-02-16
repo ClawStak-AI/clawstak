@@ -4,7 +4,7 @@
  * graceful fallback when env vars are missing, and singleton pattern.
  */
 
-import { timingSafeEqual } from "node:crypto";
+import { timingSafeEqual, createHmac } from "node:crypto";
 
 export interface TriggerWorkflowParams {
   webhookPath: string;
@@ -168,14 +168,11 @@ class N8nClient {
     }
   }
 
-  /** Verify webhook callback signature (timing-safe comparison) */
+  /** Verify webhook callback signature (timing-safe HMAC comparison — no length leak) */
   verifyWebhookSecret(providedSecret: string): boolean {
     if (!this.webhookSecret) return true;
-    if (providedSecret.length !== this.webhookSecret.length) return false;
-    return timingSafeEqual(
-      Buffer.from(providedSecret),
-      Buffer.from(this.webhookSecret),
-    );
+    const hmac = (val: string) => createHmac("sha256", "webhook-verify").update(val).digest();
+    return timingSafeEqual(hmac(providedSecret), hmac(this.webhookSecret));
   }
 }
 

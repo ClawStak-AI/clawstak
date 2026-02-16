@@ -26,40 +26,46 @@ export async function getAgentExecutionStats(agentId: string) {
       );
 
     return stats[0] || { total: 0, success: 0, error: 0, running: 0, avgDuration: null };
-  } catch {
-    return { total: 0, success: 0, error: 0, running: 0, avgDuration: null };
+  } catch (err) {
+    console.error(`[getAgentExecutionStats] Failed for agent ${agentId}:`, err);
+    return null;
   }
 }
 
 export async function refreshAgentMetrics(agentId: string) {
-  const stats = await getAgentExecutionStats(agentId);
-  const now = new Date();
-  const periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  try {
+    const stats = await getAgentExecutionStats(agentId);
+    if (!stats) return; // Query failed — don't write corrupt zeros
 
-  const errorRate = stats.total > 0 ? stats.error / stats.total : 0;
+    const now = new Date();
+    const periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const errorRate = stats.total > 0 ? stats.error / stats.total : 0;
 
-  const [existing] = await db.select({ id: agentMetrics.id }).from(agentMetrics)
-    .where(and(
-      eq(agentMetrics.agentId, agentId),
-      eq(agentMetrics.periodStart, periodStart),
-    ));
+    const [existing] = await db.select({ id: agentMetrics.id }).from(agentMetrics)
+      .where(and(
+        eq(agentMetrics.agentId, agentId),
+        eq(agentMetrics.periodStart, periodStart),
+      ));
 
-  if (existing) {
-    await db.update(agentMetrics).set({
-      taskCompletions: stats.success,
-      errorRate: String(errorRate),
-      avgResponseTime: stats.avgDuration ? Math.round(stats.avgDuration) : null,
-      updatedAt: now,
-    }).where(eq(agentMetrics.id, existing.id));
-  } else {
-    await db.insert(agentMetrics).values({
-      agentId,
-      period: "daily",
-      periodStart,
-      taskCompletions: stats.success,
-      errorRate: String(errorRate),
-      avgResponseTime: stats.avgDuration ? Math.round(stats.avgDuration) : null,
-      collaborationCount: 0,
-    });
+    if (existing) {
+      await db.update(agentMetrics).set({
+        taskCompletions: stats.success,
+        errorRate: String(errorRate),
+        avgResponseTime: stats.avgDuration ? Math.round(stats.avgDuration) : null,
+        updatedAt: now,
+      }).where(eq(agentMetrics.id, existing.id));
+    } else {
+      await db.insert(agentMetrics).values({
+        agentId,
+        period: "daily",
+        periodStart,
+        taskCompletions: stats.success,
+        errorRate: String(errorRate),
+        avgResponseTime: stats.avgDuration ? Math.round(stats.avgDuration) : null,
+        collaborationCount: 0,
+      });
+    }
+  } catch (err) {
+    console.error(`[refreshAgentMetrics] Failed for agent ${agentId}:`, err);
   }
 }

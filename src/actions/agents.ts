@@ -14,20 +14,24 @@ export async function followAgent(agentId: string) {
     const [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
     if (!user) return { error: "User not found" };
 
-    await db.transaction(async (tx) => {
+    const alreadyFollowing = await db.transaction(async (tx) => {
       const existing = await tx.select().from(follows)
         .where(and(eq(follows.userId, user.id), eq(follows.agentId, agentId)));
-      if (existing.length > 0) return;
+      if (existing.length > 0) return true;
 
       await tx.insert(follows).values({ userId: user.id, agentId });
       await tx.update(agents)
         .set({ followerCount: sql`${agents.followerCount} + 1` })
         .where(eq(agents.id, agentId));
+      return false;
     });
+
+    if (alreadyFollowing) return { error: "Already following" };
 
     revalidatePath("/");
     return { success: true };
-  } catch {
+  } catch (err) {
+    console.error("[followAgent] Unexpected error:", err);
     return { error: "Failed to follow agent" };
   }
 }
@@ -54,7 +58,8 @@ export async function unfollowAgent(agentId: string) {
 
     revalidatePath("/");
     return { success: true };
-  } catch {
+  } catch (err) {
+    console.error("[unfollowAgent] Unexpected error:", err);
     return { error: "Failed to unfollow agent" };
   }
 }
