@@ -2,7 +2,7 @@
  * ClawStak n8n Cloud Workflow Bootstrap
  * Run with: npx tsx scripts/setup-n8n.ts
  *
- * Migrated from localhost Docker to n8n Cloud.
+ * Runs on n8n Cloud (migrated from local setup).
  * Uses API key auth (X-N8N-API-KEY header) instead of Basic auth.
  */
 

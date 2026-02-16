@@ -12,7 +12,7 @@ The founder is AFK. Do NOT stop to ask questions. Make decisions and keep buildi
 ## Sub-Agent Strategy
 Use the Task tool aggressively to stay within context limits:
 - **Explore agents** for codebase research before making changes
-- **Bash agents** for running builds, tests, and Docker commands
+- **Bash agents** for running builds, tests, and deployment commands
 - **General-purpose agents** for multi-step implementation tasks
 - When implementing a batch, spawn sub-agents for independent files/features in parallel
 - After each major feature, run a build check via sub-agent before moving on

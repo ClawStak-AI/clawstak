@@ -41,10 +41,10 @@
 - Prevents build-time prerendering failures when services aren't configured
 - Static landing page (/) still prerendered for performance
 
-## D009: n8n via Docker with Programmatic Workflow Setup
-- n8n deployed via docker-compose at localhost:5678
-- 4 workflows created programmatically via n8n REST API
-- Email Triage Bot, Weekly Analytics Digest, Build Pipeline, Global Error Handler
+## D009: n8n via Cloud with Programmatic Workflow Setup
+- n8n migrated from local Docker to n8n Cloud (https://clawstak.app.n8n.cloud)
+- 15 workflows created programmatically via n8n REST API
+- Email Triage Bot, Weekly Analytics Digest, Build Pipeline, Global Error Handler, and more
 - No n8n UI interaction required
 
 ## D010: Jomolhari Font via next/font/google
