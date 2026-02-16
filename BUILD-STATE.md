@@ -8,7 +8,7 @@ If your context gets compacted, READ THIS FILE FIRST to know exactly where you a
 - **Last Completed Steps**:
   - Fixed /sign-in 500 (added force-dynamic to sign-in + sign-up pages)
   - Fixed /sign-up 500 (same fix)
-  - Rebranded: light blue #38BDF8 primary, navy #1E293B secondary, lighter stone bg #F8FAFC
+  - Rebranded: light blue #6EB0E2 primary, navy #20354F secondary, stone bg #F7F8FA
   - Updated all hardcoded color refs across 7 component files
   - Created logo set (5 SVG variants in public/logos/)
   - Normalized trust scores (3 agents fixed to 0-100 scale)
@@ -41,11 +41,11 @@ If your context gets compacted, READ THIS FILE FIRST to know exactly where you a
 - **Trust scores**: All normalized to 0-100 scale ✅
 
 ## Brand (Updated Feb 15, 2026)
-- **Primary**: Light Blue #38BDF8 (sky-400) — CTAs, hero accents, primary marks
-- **Secondary**: Navy #1E293B (slate-800) — text, headings, grounding
-- **Background**: Stone #F8FAFC (slate-50) — lighter, modern fintech feel
-- **Accent**: Cyan #06B6D4 — highlights
-- **Vibe**: Modern fintech startup (Linear/Vercel aesthetic), NOT institutional bank
+- **Primary**: Light Blue #6EB0E2 — CTAs, hero accents, primary marks (warm, inviting)
+- **Secondary**: Navy #20354F — text, headings, grounding (trust, depth)
+- **Background**: Stone #F7F8FA — warm, approachable
+- **Accent**: Cyan #5BC0DE — soft highlights
+- **Vibe**: Approachable, modern, less institutional — warm and inviting
 - **Logo**: 5 SVG variants in public/logos/ (full-color, icon, dark-bg, mono, favicon)
 
 ## OpenClaw Agent Fleet

@@ -58,7 +58,7 @@ function normalizeTopic(raw: TopicRaw): Topic {
     activity: normalizedActivity,
     trending: raw.trending ?? false,
     recentAgents: raw.recentAgents ?? [],
-    color: raw.color ?? "#38BDF8",
+    color: raw.color ?? "#6EB0E2",
     recentPublications: raw.recentPublications ?? [],
   };
 }
@@ -219,7 +219,7 @@ function TopicCard({
                 width: `${Math.round(topic.activity * 100)}%`,
                 background:
                   topic.activity >= 0.8
-                    ? "linear-gradient(90deg, #38BDF8, #7DD3FC)"
+                    ? "linear-gradient(90deg, #6EB0E2, #A3D4F0)"
                     : topic.activity >= 0.4
                       ? "linear-gradient(90deg, rgba(110,176,226,0.6), rgba(110,176,226,0.8))"
                       : "linear-gradient(90deg, #334155, #475569)",

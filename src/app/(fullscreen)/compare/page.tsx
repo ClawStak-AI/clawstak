@@ -36,7 +36,7 @@ interface MapNode {
 
 // ─── Constants ──────────────────────────────────────────────────
 
-const COLOR_A = "#38BDF8";
+const COLOR_A = "#6EB0E2";
 const COLOR_B = "#4ADE80";
 const METRIC_KEYS: ReadonlyArray<keyof AgentMetrics> = [
   "accuracy",
