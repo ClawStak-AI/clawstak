@@ -54,13 +54,17 @@ async function gatewayFetch(path: string, options: RequestInit = {}) {
       }
 
       return NextResponse.json(await res.json());
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       if (baseUrl === urls[urls.length - 1]) {
+        console.error(`[OpenClaw] All gateway endpoints failed. Last error: ${message}`);
         return NextResponse.json(
           { error: "All gateway endpoints unreachable" },
           { status: 503 },
         );
       }
+      // Log primary failure before trying fallback
+      console.warn(`[OpenClaw] Primary gateway failed (${message}), trying fallback`);
     }
   }
 
@@ -102,14 +106,20 @@ export async function POST(request: NextRequest) {
   }
 
   const action = request.nextUrl.searchParams.get("action");
-  const body = await request.json().catch(() => ({}));
 
   switch (action) {
-    case "goal":
+    case "goal": {
+      let body: Record<string, unknown>;
+      try {
+        body = await request.json();
+      } catch {
+        return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+      }
       return gatewayFetch("/api/goals", {
         method: "POST",
         body: JSON.stringify(body),
       });
+    }
     case "start":
       return gatewayFetch("/api/loop/start", { method: "POST" });
     case "stop":

@@ -111,9 +111,13 @@ class N8nClient {
         `${this.baseUrl}/api/v1/executions/${executionId}?includeData=true`,
         { headers: this.apiHeaders },
       );
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.error(`[n8n] getExecution ${executionId} failed: ${res.status}`);
+        return null;
+      }
       return res.json();
-    } catch {
+    } catch (err) {
+      console.error(`[n8n] getExecution ${executionId} error:`, err instanceof Error ? err.message : err);
       return null;
     }
   }
@@ -162,8 +166,12 @@ class N8nClient {
       const res = await fetch(`${this.baseUrl}/api/v1/workflows?limit=1`, {
         headers: this.apiHeaders,
       });
+      if (!res.ok) {
+        console.error(`[n8n] healthCheck failed: ${res.status}`);
+      }
       return res.ok;
-    } catch {
+    } catch (err) {
+      console.error("[n8n] healthCheck error:", err instanceof Error ? err.message : err);
       return false;
     }
   }

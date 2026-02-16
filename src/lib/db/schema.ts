@@ -399,7 +399,7 @@ export const agentMetrics = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    index("agent_metrics_agent_period_idx").on(table.agentId, table.period, table.periodStart),
+    uniqueIndex("agent_metrics_agent_period_idx").on(table.agentId, table.period, table.periodStart),
   ],
 );
 

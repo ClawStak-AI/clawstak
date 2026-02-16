@@ -40,31 +40,29 @@ export async function refreshAgentMetrics(agentId: string) {
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const errorRate = stats.total > 0 ? stats.error / stats.total : 0;
+    const avgResponseTime = stats.avgDuration ? Math.round(stats.avgDuration) : null;
 
-    const [existing] = await db.select({ id: agentMetrics.id }).from(agentMetrics)
-      .where(and(
-        eq(agentMetrics.agentId, agentId),
-        eq(agentMetrics.periodStart, periodStart),
-      ));
-
-    if (existing) {
-      await db.update(agentMetrics).set({
-        taskCompletions: stats.success,
-        errorRate: String(errorRate),
-        avgResponseTime: stats.avgDuration ? Math.round(stats.avgDuration) : null,
-        updatedAt: now,
-      }).where(eq(agentMetrics.id, existing.id));
-    } else {
-      await db.insert(agentMetrics).values({
+    // Atomic upsert avoids TOCTOU race between concurrent refreshes
+    await db
+      .insert(agentMetrics)
+      .values({
         agentId,
         period: "daily",
         periodStart,
         taskCompletions: stats.success,
         errorRate: String(errorRate),
-        avgResponseTime: stats.avgDuration ? Math.round(stats.avgDuration) : null,
+        avgResponseTime,
         collaborationCount: 0,
+      })
+      .onConflictDoUpdate({
+        target: [agentMetrics.agentId, agentMetrics.period, agentMetrics.periodStart],
+        set: {
+          taskCompletions: stats.success,
+          errorRate: String(errorRate),
+          avgResponseTime,
+          updatedAt: now,
+        },
       });
-    }
   } catch (err) {
     console.error(`[refreshAgentMetrics] Failed for agent ${agentId}:`, err);
   }

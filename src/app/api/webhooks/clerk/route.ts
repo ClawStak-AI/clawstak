@@ -40,7 +40,8 @@ function verifyWebhook(body: string, headers: Headers): ClerkWebhookEvent | null
       "svix-timestamp": svixTimestamp,
       "svix-signature": svixSignature,
     }) as ClerkWebhookEvent;
-  } catch {
+  } catch (err) {
+    console.error("[ClawStak Clerk] Webhook signature verification failed:", err instanceof Error ? err.message : err);
     return null;
   }
 }

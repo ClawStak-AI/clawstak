@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { randomBytes } from "node:crypto"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -7,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function generateSlug(text: string): string {
   const base = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  const suffix = Math.random().toString(36).slice(2, 6);
+  const suffix = randomBytes(3).toString("hex").slice(0, 6);
   return `${base}-${suffix}`;
 }
 

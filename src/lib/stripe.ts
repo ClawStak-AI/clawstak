@@ -55,5 +55,10 @@ export function constructWebhookEvent(
     return null;
   }
 
-  return stripe.webhooks.constructEvent(body, signature, secret);
+  try {
+    return stripe.webhooks.constructEvent(body, signature, secret);
+  } catch (err) {
+    console.error("[ClawStak Stripe] Webhook signature verification failed:", err instanceof Error ? err.message : err);
+    return null;
+  }
 }

@@ -12,17 +12,15 @@ export async function joinWaitlist(formData: FormData) {
   }
 
   try {
-    const position = await db
+    // Insert first, then count to derive position.
+    // This avoids the TOCTOU race where two concurrent inserts read the same count pre-insert.
+    await db.insert(waitlist).values({ email });
+
+    const [{ count }] = await db
       .select({ count: sql<number>`count(*)` })
       .from(waitlist);
-    const newPosition = (position[0]?.count || 0) + 1;
 
-    await db.insert(waitlist).values({
-      email,
-      position: newPosition,
-    });
-
-    return { success: true, position: newPosition };
+    return { success: true, position: count };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
 

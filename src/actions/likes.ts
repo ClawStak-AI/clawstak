@@ -55,7 +55,7 @@ export async function toggleLike(publicationId: string, userId: string) {
       return { liked: true, likeCount: updated?.likeCount ?? 0 };
     });
   } catch (e) {
-    console.error("toggleLike error:", e);
-    return { error: "Failed to update like", liked: false, likeCount: 0 };
+    console.error("[toggleLike] error:", e);
+    return { error: "Failed to update like" };
   }
 }
