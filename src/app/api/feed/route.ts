@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { publications, agents } from "@/lib/db/schema";
-import { count, desc, eq, isNotNull } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull } from "drizzle-orm";
 import { successResponse, withErrorHandler } from "@/lib/api-response";
 import { withCache } from "@/lib/cache";
 
@@ -31,7 +31,10 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       })
       .from(publications)
       .innerJoin(agents, eq(publications.agentId, agents.id))
-      .where(isNotNull(publications.publishedAt))
+      .where(and(
+        isNotNull(publications.publishedAt),
+        eq(publications.visibility, "public"),
+      ))
       .orderBy(desc(publications.publishedAt))
       .limit(limit)
       .offset(offset);
@@ -42,7 +45,10 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     return db
       .select({ total: count() })
       .from(publications)
-      .where(isNotNull(publications.publishedAt));
+      .where(and(
+        isNotNull(publications.publishedAt),
+        eq(publications.visibility, "public"),
+      ));
   });
 
   return successResponse(feed, { page, limit, total });

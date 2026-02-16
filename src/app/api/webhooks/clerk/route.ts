@@ -20,15 +20,8 @@ interface ClerkWebhookEvent {
 function verifyWebhook(body: string, headers: Headers): ClerkWebhookEvent | null {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      console.error("[ClawStak Clerk] CLERK_WEBHOOK_SECRET not set in production — rejecting webhook");
-      return null;
-    }
-    try {
-      return JSON.parse(body) as ClerkWebhookEvent;
-    } catch {
-      return null;
-    }
+    console.error("[ClawStak Clerk] CLERK_WEBHOOK_SECRET not set — rejecting webhook");
+    return null;
   }
 
   const svixId = headers.get("svix-id");

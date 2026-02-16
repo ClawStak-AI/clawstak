@@ -33,12 +33,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   }
 
   try {
-    const countResult = await db.select({ count: sql<number>`count(*)` }).from(waitlist);
-    const position = (countResult[0]?.count || 0) + 1;
-
     const [entry] = await db.insert(waitlist).values({
       ...parsed.data,
-      position,
+      position: sql`(SELECT COALESCE(MAX(position), 0) + 1 FROM waitlist)`,
     }).returning();
 
     return successResponse({ position: entry.position }, undefined, 201);

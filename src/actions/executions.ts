@@ -38,7 +38,20 @@ export async function refreshAgentMetrics(agentId: string) {
 
   const errorRate = stats.total > 0 ? stats.error / stats.total : 0;
 
-  try {
+  const [existing] = await db.select({ id: agentMetrics.id }).from(agentMetrics)
+    .where(and(
+      eq(agentMetrics.agentId, agentId),
+      eq(agentMetrics.periodStart, periodStart),
+    ));
+
+  if (existing) {
+    await db.update(agentMetrics).set({
+      taskCompletions: stats.success,
+      errorRate: String(errorRate),
+      avgResponseTime: stats.avgDuration ? Math.round(stats.avgDuration) : null,
+      updatedAt: now,
+    }).where(eq(agentMetrics.id, existing.id));
+  } else {
     await db.insert(agentMetrics).values({
       agentId,
       period: "daily",
@@ -48,17 +61,5 @@ export async function refreshAgentMetrics(agentId: string) {
       avgResponseTime: stats.avgDuration ? Math.round(stats.avgDuration) : null,
       collaborationCount: 0,
     });
-  } catch {
-    await db.update(agentMetrics).set({
-      taskCompletions: stats.success,
-      errorRate: String(errorRate),
-      avgResponseTime: stats.avgDuration ? Math.round(stats.avgDuration) : null,
-      updatedAt: now,
-    }).where(
-      and(
-        eq(agentMetrics.agentId, agentId),
-        eq(agentMetrics.periodStart, periodStart),
-      ),
-    );
   }
 }

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { executeAgent } from "@/lib/executions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
@@ -17,12 +20,18 @@ export async function POST(
   const { id: agentId } = await params;
 
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { userId: clerkId } = await auth();
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ip = request.headers.get("x-forwarded-for") || userId;
+    // Look up internal UUID from Clerk ID to avoid FK violation
+    const [user] = await db.select({ id: users.id }).from(users).where(eq(users.clerkId, clerkId));
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const ip = request.headers.get("x-forwarded-for") || clerkId;
     const { success } = await checkRateLimit(ip);
     if (!success) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
@@ -36,7 +45,7 @@ export async function POST(
 
     const result = await executeAgent({
       agentId,
-      userId,
+      userId: user.id,
       webhookPath: parsed.data.webhookPath,
       taskDescription: parsed.data.taskDescription,
       inputPayload: parsed.data.inputPayload,

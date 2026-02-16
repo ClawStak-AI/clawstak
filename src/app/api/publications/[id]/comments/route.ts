@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { comments, users } from "@/lib/db/schema";
 import { eq, and, asc, inArray } from "drizzle-orm";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
 // ──────────────────────────────────────────────
@@ -112,6 +113,12 @@ export const POST = withErrorHandler(async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) => {
+  const ip = req.headers.get("x-forwarded-for") || "anonymous";
+  const { success } = await checkRateLimit(ip);
+  if (!success) {
+    return errorResponse("RATE_LIMIT", "Too many requests", 429);
+  }
+
   const { id: publicationId } = await params;
 
   let body: Record<string, unknown>;

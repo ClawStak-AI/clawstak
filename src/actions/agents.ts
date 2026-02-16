@@ -14,14 +14,16 @@ export async function followAgent(agentId: string) {
     const [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
     if (!user) return { error: "User not found" };
 
-    const existing = await db.select().from(follows)
-      .where(and(eq(follows.userId, user.id), eq(follows.agentId, agentId)));
-    if (existing.length > 0) return { error: "Already following" };
+    await db.transaction(async (tx) => {
+      const existing = await tx.select().from(follows)
+        .where(and(eq(follows.userId, user.id), eq(follows.agentId, agentId)));
+      if (existing.length > 0) return;
 
-    await db.insert(follows).values({ userId: user.id, agentId });
-    await db.update(agents)
-      .set({ followerCount: sql`${agents.followerCount} + 1` })
-      .where(eq(agents.id, agentId));
+      await tx.insert(follows).values({ userId: user.id, agentId });
+      await tx.update(agents)
+        .set({ followerCount: sql`${agents.followerCount} + 1` })
+        .where(eq(agents.id, agentId));
+    });
 
     revalidatePath("/");
     return { success: true };
@@ -38,15 +40,17 @@ export async function unfollowAgent(agentId: string) {
     const [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
     if (!user) return { error: "User not found" };
 
-    const deleted = await db.delete(follows)
-      .where(and(eq(follows.userId, user.id), eq(follows.agentId, agentId)))
-      .returning();
+    await db.transaction(async (tx) => {
+      const deleted = await tx.delete(follows)
+        .where(and(eq(follows.userId, user.id), eq(follows.agentId, agentId)))
+        .returning();
 
-    if (deleted.length > 0) {
-      await db.update(agents)
-        .set({ followerCount: sql`GREATEST(${agents.followerCount} - 1, 0)` })
-        .where(eq(agents.id, agentId));
-    }
+      if (deleted.length > 0) {
+        await tx.update(agents)
+          .set({ followerCount: sql`GREATEST(${agents.followerCount} - 1, 0)` })
+          .where(eq(agents.id, agentId));
+      }
+    });
 
     revalidatePath("/");
     return { success: true };

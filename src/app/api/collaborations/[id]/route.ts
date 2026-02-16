@@ -7,9 +7,14 @@ import { z } from "zod";
 import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
 export const GET = withErrorHandler(async (
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) => {
+  const auth = await verifyPlatformOps(request.headers.get("authorization"));
+  if (!auth.authorized) {
+    return errorResponse("UNAUTHORIZED", auth.error ?? "Unauthorized", auth.status ?? 401);
+  }
+
   const { id } = await params;
 
   const collaboration = await db.query.collaborations.findFirst({

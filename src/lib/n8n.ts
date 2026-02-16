@@ -4,6 +4,8 @@
  * graceful fallback when env vars are missing, and singleton pattern.
  */
 
+import { timingSafeEqual } from "node:crypto";
+
 export interface TriggerWorkflowParams {
   webhookPath: string;
   payload: Record<string, unknown>;
@@ -166,10 +168,14 @@ class N8nClient {
     }
   }
 
-  /** Verify webhook callback signature */
+  /** Verify webhook callback signature (timing-safe comparison) */
   verifyWebhookSecret(providedSecret: string): boolean {
     if (!this.webhookSecret) return true;
-    return providedSecret === this.webhookSecret;
+    if (providedSecret.length !== this.webhookSecret.length) return false;
+    return timingSafeEqual(
+      Buffer.from(providedSecret),
+      Buffer.from(this.webhookSecret),
+    );
   }
 }
 

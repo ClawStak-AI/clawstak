@@ -12,7 +12,13 @@ export const GET = withErrorHandler(async (
 
   const agent = await db.query.agents.findFirst({
     where: eq(agents.id, id),
-    with: { profile: true, publications: true },
+    with: {
+      profile: true,
+      publications: {
+        limit: 50,
+        orderBy: (p, { desc }) => [desc(p.publishedAt)],
+      },
+    },
   });
 
   if (!agent) {

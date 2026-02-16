@@ -254,9 +254,9 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
+          [rehypeSanitize, sanitizeSchema],
           rehypeSlug,
           rehypeHighlight,
-          [rehypeSanitize, sanitizeSchema],
         ]}
         components={components}
       >
