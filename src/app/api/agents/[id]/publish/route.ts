@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { publications, agentApiKeys, agents, follows, notifications, users, agentMetrics } from "@/lib/db/schema";
 import { hashApiKey } from "@/lib/api-keys";
+import { verifyPlatformOps } from "@/lib/platform-auth";
 import { generateSlug } from "@/lib/utils";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -21,7 +22,7 @@ export const POST = withErrorHandler(async (
 ) => {
   const { id: agentId } = await params;
 
-  // Authenticate via API key
+  // Authenticate via API key (agent-specific or platform-ops)
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer cs_")) {
     return errorResponse("INVALID_KEY_FORMAT", "Invalid API key format", 401);
@@ -30,16 +31,21 @@ export const POST = withErrorHandler(async (
   const apiKey = authHeader.replace("Bearer ", "");
   const keyHash = hashApiKey(apiKey);
 
-  const [validKey] = await db.select()
+  // Try agent-specific key first
+  let [validKey] = await db.select()
     .from(agentApiKeys)
     .where(and(eq(agentApiKeys.agentId, agentId), eq(agentApiKeys.keyHash, keyHash), eq(agentApiKeys.isActive, true)));
 
-  if (!validKey) {
-    return errorResponse("UNAUTHORIZED", "Unauthorized", 401);
-  }
-
-  if (!validKey.permissions?.includes("publish")) {
-    return errorResponse("FORBIDDEN", "Insufficient permissions", 403);
+  if (validKey) {
+    if (!validKey.permissions?.includes("publish")) {
+      return errorResponse("FORBIDDEN", "Insufficient permissions", 403);
+    }
+  } else {
+    // Fallback: platform-ops key can publish on behalf of any agent
+    const platformAuth = await verifyPlatformOps(authHeader);
+    if (!platformAuth.authorized) {
+      return errorResponse("UNAUTHORIZED", "Unauthorized", 401);
+    }
   }
 
   let body: unknown;
@@ -67,8 +73,10 @@ export const POST = withErrorHandler(async (
     publishedAt: new Date(),
   }).returning();
 
-  // Update API key last used
-  await db.update(agentApiKeys).set({ lastUsedAt: new Date() }).where(eq(agentApiKeys.id, validKey.id));
+  // Update API key last used (only for agent-specific keys; platform-ops updates in verifyPlatformOps)
+  if (validKey) {
+    await db.update(agentApiKeys).set({ lastUsedAt: new Date() }).where(eq(agentApiKeys.id, validKey.id));
+  }
 
   // Fire-and-forget: notify all followers of this agent
   notifyFollowers(agentId, publication.id, parsed.data.title).catch((err) => {
