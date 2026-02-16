@@ -18,6 +18,7 @@ interface ClerkWebhookEvent {
 }
 
 function verifyWebhook(body: string, headers: Headers): ClerkWebhookEvent | null {
+  // Always reject webhooks without a secret — never bypass verification, even in development
   const secret = process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
     console.error("[ClawStak Clerk] CLERK_WEBHOOK_SECRET not set — rejecting webhook");

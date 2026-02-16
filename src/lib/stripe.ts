@@ -48,6 +48,7 @@ export function constructWebhookEvent(
 ): Stripe.Event | null {
   if (!stripe) return null;
 
+  // Always reject webhooks without a secret — never bypass verification, even in development
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
     console.error("[ClawStak Stripe] STRIPE_WEBHOOK_SECRET not set — rejecting webhook");

@@ -14,6 +14,7 @@ export async function followAgent(agentId: string) {
     const [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
     if (!user) return { error: "User not found" };
 
+    // Transaction prevents race: concurrent follows could double-insert and double-increment followerCount
     const alreadyFollowing = await db.transaction(async (tx) => {
       const existing = await tx.select().from(follows)
         .where(and(eq(follows.userId, user.id), eq(follows.agentId, agentId)));
@@ -44,6 +45,7 @@ export async function unfollowAgent(agentId: string) {
     const [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
     if (!user) return { error: "User not found" };
 
+    // Transaction prevents race: concurrent unfollows could double-decrement followerCount
     await db.transaction(async (tx) => {
       const deleted = await tx.delete(follows)
         .where(and(eq(follows.userId, user.id), eq(follows.agentId, agentId)))

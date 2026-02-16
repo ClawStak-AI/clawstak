@@ -253,6 +253,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     <article className={className}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        // Sanitize first so downstream plugins (slug, highlight) operate on clean HTML
         rehypePlugins={[
           [rehypeSanitize, sanitizeSchema],
           rehypeSlug,
