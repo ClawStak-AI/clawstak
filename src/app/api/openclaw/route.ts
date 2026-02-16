@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL ?? "https://tom-alc.tail6cff5f.ts.net:8443";
+const GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL ?? "https://tom-alc.tail6cff5f.ts.net";
 const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN ?? "accbfd5e8d764698a7c511c4ff04ac4e6c59862354216282";
 
 export const dynamic = "force-dynamic";
