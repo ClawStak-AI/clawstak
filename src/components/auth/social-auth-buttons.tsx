@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSignIn, useSignUp } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import type { AuthMode } from "@/hooks/use-auth-modal";
@@ -65,11 +66,13 @@ const providers = [
 export function SocialAuthButtons({ mode }: SocialAuthButtonsProps) {
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
+  const [error, setError] = useState<string | null>(null);
 
   const handleOAuth = async (
     strategy: "oauth_google" | "oauth_github" | "oauth_apple" | "oauth_x",
   ) => {
     try {
+      setError(null);
       const flow = mode === "sign-in" ? signIn : signUp;
       if (!flow) return;
 
@@ -80,11 +83,21 @@ export function SocialAuthButtons({ mode }: SocialAuthButtonsProps) {
       });
     } catch (err) {
       console.error("OAuth error:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Authentication failed. Please try again.",
+      );
     }
   };
 
   return (
     <div className="flex flex-col gap-3">
+      {error && (
+        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
       {providers.map((provider) => (
         <Button
           key={provider.name}

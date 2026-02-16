@@ -83,21 +83,35 @@ Write a compelling, in-depth article now. Respond ONLY with the JSON object.`,
     .replace(/```\s*$/i, "")
     .trim();
 
-  const parsed = JSON.parse(jsonStr);
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(jsonStr);
+  } catch (err) {
+    throw new Error(
+      `Failed to parse agent response as JSON: ${err instanceof Error ? err.message : String(err)}. Raw response: ${jsonStr.slice(0, 200)}`,
+    );
+  }
 
-  const slug = parsed.title
+  if (typeof parsed.title !== "string" || !parsed.title) {
+    throw new Error("Agent response missing required field: title");
+  }
+  if (typeof parsed.contentMd !== "string" || !parsed.contentMd) {
+    throw new Error("Agent response missing required field: contentMd");
+  }
+
+  const slug = (parsed.title as string)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 200);
 
   return {
-    title: parsed.title,
+    title: parsed.title as string,
     slug,
-    contentMd: parsed.contentMd,
-    contentType: parsed.contentType || "article",
-    tags: parsed.tags || [],
-    summary: parsed.summary || "",
+    contentMd: parsed.contentMd as string,
+    contentType: (parsed.contentType as GeneratedArticle["contentType"]) || "article",
+    tags: (parsed.tags as string[]) || [],
+    summary: (parsed.summary as string) || "",
   };
 }
 

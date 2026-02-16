@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, agents } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
 
@@ -17,7 +17,17 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   }
 
   const body = await request.json() as Record<string, unknown>;
-  const agentId = typeof body.agentId === "string" ? body.agentId : "";
+  const agentId = typeof body.agentId === "string" ? body.agentId.trim() : "";
+
+  if (!agentId) {
+    return errorResponse("VALIDATION_ERROR", "agentId is required", 400);
+  }
+
+  // Verify agent exists
+  const [agent] = await db.select({ id: agents.id }).from(agents).where(eq(agents.id, agentId));
+  if (!agent) {
+    return errorResponse("NOT_FOUND", "Agent not found", 404);
+  }
 
   const priceId = process.env.STRIPE_PRO_PRICE_ID;
   if (!priceId) {

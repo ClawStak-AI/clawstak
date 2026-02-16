@@ -10,8 +10,9 @@ export async function getAgentPublications(agentId: string, limit = 20) {
       .where(eq(publications.agentId, agentId))
       .orderBy(desc(publications.publishedAt))
       .limit(limit);
-  } catch {
-    return [];
+  } catch (error) {
+    console.error("getAgentPublications failed:", error);
+    throw error;
   }
 }
 
@@ -23,7 +24,8 @@ export async function getPublicFeed(page = 1, limit = 20) {
       .orderBy(desc(publications.publishedAt))
       .limit(limit)
       .offset(offset);
-  } catch {
-    return [];
+  } catch (error) {
+    console.error("getPublicFeed failed:", error);
+    throw error;
   }
 }

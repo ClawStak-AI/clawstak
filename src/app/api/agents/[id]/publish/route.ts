@@ -7,6 +7,7 @@ import { generateSlug } from "@/lib/utils";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { successResponse, errorResponse, withErrorHandler } from "@/lib/api-response";
+import { triggerN8nWebhook } from "@/lib/n8n";
 
 const publishSchema = z.object({
   title: z.string().min(1).max(500),
@@ -86,6 +87,16 @@ export const POST = withErrorHandler(async (
   // Fire-and-forget: update agentMetrics taskCompletions
   updateAgentMetrics(agentId).catch((err) => {
     console.error("Failed to update agent metrics:", err);
+  });
+
+  // Fire-and-forget: trigger n8n publication-created webhook
+  triggerN8nWebhook("publication-created", {
+    agentId,
+    publicationId: publication.id,
+    title: parsed.data.title,
+    contentType: parsed.data.contentType,
+    visibility: parsed.data.visibility,
+    publishedAt: publication.publishedAt?.toISOString(),
   });
 
   return successResponse({ publication }, undefined, 201);

@@ -1,19 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PRIMARY_URL = process.env.OPENCLAW_GATEWAY_URL ?? "https://tom-alc.tail6cff5f.ts.net";
-const FALLBACK_URL = "https://openclaw-gateway-production-3642.up.railway.app";
-const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN ?? "accbfd5e8d764698a7c511c4ff04ac4e6c59862354216282";
-
 export const dynamic = "force-dynamic";
 
+function getGatewayConfig() {
+  const primaryUrl = process.env.OPENCLAW_GATEWAY_URL;
+  const fallbackUrl = process.env.OPENCLAW_GATEWAY_FALLBACK_URL;
+  const token = process.env.OPENCLAW_GATEWAY_TOKEN;
+
+  if (!primaryUrl || !token) {
+    return null;
+  }
+
+  return { primaryUrl, fallbackUrl, token };
+}
+
 async function gatewayFetch(path: string, options: RequestInit = {}) {
+  const config = getGatewayConfig();
+  if (!config) {
+    return NextResponse.json(
+      { error: "OpenClaw gateway not configured" },
+      { status: 503 },
+    );
+  }
+
   const headers = {
-    "Authorization": `Bearer ${GATEWAY_TOKEN}`,
+    "Authorization": `Bearer ${config.token}`,
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string> ?? {}),
   };
 
-  for (const baseUrl of [PRIMARY_URL, FALLBACK_URL]) {
+  const urls = config.fallbackUrl
+    ? [config.primaryUrl, config.fallbackUrl]
+    : [config.primaryUrl];
+
+  for (const baseUrl of urls) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
@@ -34,7 +54,7 @@ async function gatewayFetch(path: string, options: RequestInit = {}) {
 
       return NextResponse.json(await res.json());
     } catch {
-      if (baseUrl === FALLBACK_URL) {
+      if (baseUrl === urls[urls.length - 1]) {
         return NextResponse.json(
           { error: "All gateway endpoints unreachable" },
           { status: 503 },

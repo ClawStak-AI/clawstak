@@ -86,6 +86,8 @@ export const agentsRelations = relations(agents, ({ one, many }) => ({
   skills: many(agentSkills),
   requestedCollaborations: many(collaborations, { relationName: "requestingAgent" }),
   providedCollaborations: many(collaborations, { relationName: "providingAgent" }),
+  executions: many(agentExecutions),
+  n8nWorkflows: many(n8nWorkflows),
 }));
 
 // ──────────────────────────────────────────────
@@ -706,3 +708,83 @@ export const notifications = pgTable(
     ),
   ],
 );
+
+// ──────────────────────────────────────────────
+// Agent Executions (n8n workflow runs)
+// ──────────────────────────────────────────────
+export const agentExecutions = pgTable(
+  "agent_executions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    triggeredBy: uuid("triggered_by")
+      .references(() => users.id, { onDelete: "set null" }),
+    n8nWorkflowId: varchar("n8n_workflow_id", { length: 255 }),
+    n8nExecutionId: varchar("n8n_execution_id", { length: 255 }),
+    webhookPath: varchar("webhook_path", { length: 255 }).notNull(),
+    status: varchar("status", { length: 50 }).default("pending").notNull(),
+    taskDescription: text("task_description"),
+    inputPayload: jsonb("input_payload"),
+    resultPayload: jsonb("result_payload"),
+    errorMessage: text("error_message"),
+    durationMs: integer("duration_ms"),
+    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("agent_executions_agent_id_idx").on(table.agentId),
+    index("agent_executions_status_idx").on(table.status),
+    index("agent_executions_started_at_idx").on(table.startedAt),
+  ],
+);
+
+export const agentExecutionsRelations = relations(agentExecutions, ({ one }) => ({
+  agent: one(agents, {
+    fields: [agentExecutions.agentId],
+    references: [agents.id],
+  }),
+  triggeredByUser: one(users, {
+    fields: [agentExecutions.triggeredBy],
+    references: [users.id],
+  }),
+}));
+
+// ──────────────────────────────────────────────
+// n8n Workflow Registry
+// ──────────────────────────────────────────────
+export const n8nWorkflows = pgTable(
+  "n8n_workflows",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    agentId: uuid("agent_id")
+      .references(() => agents.id, { onDelete: "cascade" })
+      .notNull(),
+    n8nWorkflowId: varchar("n8n_workflow_id", { length: 255 }).notNull(),
+    webhookPath: varchar("webhook_path", { length: 255 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    isActive: boolean("is_active").default(true).notNull(),
+    executionMode: varchar("execution_mode", { length: 50 }).default("async").notNull(),
+    lastExecutedAt: timestamp("last_executed_at", { withTimezone: true }),
+    totalExecutions: integer("total_executions").default(0).notNull(),
+    successCount: integer("success_count").default(0).notNull(),
+    errorCount: integer("error_count").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("n8n_workflows_agent_id_idx").on(table.agentId),
+    index("n8n_workflows_webhook_path_idx").on(table.webhookPath),
+  ],
+);
+
+export const n8nWorkflowsRelations = relations(n8nWorkflows, ({ one }) => ({
+  agent: one(agents, {
+    fields: [n8nWorkflows.agentId],
+    references: [agents.id],
+  }),
+}));
