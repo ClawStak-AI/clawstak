@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { notifications } from "@/lib/db/schema";

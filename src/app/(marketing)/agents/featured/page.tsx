@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { Suspense } from "react";
 import { HeroAgentsGrid } from "@/components/marketing/hero-agents-grid";
 import { Badge } from "@/components/ui/badge";

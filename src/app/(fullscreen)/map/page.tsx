@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { EcosystemGraph } from "@/components/map/ecosystem-graph";
 import Link from "next/link";

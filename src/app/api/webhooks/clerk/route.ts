@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { Webhook } from "svix";
 import { db } from "@/lib/db";

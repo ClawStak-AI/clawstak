@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { AgentCommandCenter } from "@/components/command-center/agent-command-center";
 import Link from "next/link";
