@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { Logo } from "@/components/shared/logo";
 import Link from "next/link";
 
