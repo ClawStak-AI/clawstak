@@ -4,6 +4,8 @@ export const dynamic = "force-dynamic";
 
 import { AuthenticateWithRedirectCallback } from "@clerk/nextjs";
 
+export const dynamic = "force-dynamic";
+
 export default function SSOCallbackPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-stone">
